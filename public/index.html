@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="h-full bg-slate-50 text-slate-900">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بازارگاه اینترنتی بین‌المللی | پلتفرم چندفروشنده‌ای</title>
+  
+  <!-- Vazirmatn Persian Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Vazirmatn', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#bae0fd',
+              300: '#7cc8fc',
+              400: '#36a9f8',
+              500: '#0c8de9',
+              600: '#026fc7',
+              700: '#0358a1',
+              800: '#074b83',
+              900: '#0c3f6e',
+              950: '#082849',
+            },
+            brand: {
+              emerald: '#059669',
+              amber: '#d97706',
+              rose: '#e11d48',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Importmap for React and Lucide Icons -->
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@18.3.1",
+      "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+      "react-dom": "https://esm.sh/react-dom@18.3.1",
+      "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+      "lucide-react": "https://esm.sh/lucide-react@0.400.0?external=react,react-dom"
+    }
+  }
+  </script>
+
+  <!-- Babel Standalone -->
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Vazirmatn', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Custom scrollbar for clean UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased selection:bg-primary-500 selection:text-white">
+  <div id="root" class="min-h-full flex flex-col"></div>
+
+  <!-- React Main Script -->
+  <script type="text/babel" data-type="module" data-presets="react" src="./app.jsx"></script>
+</body>
+</html>
