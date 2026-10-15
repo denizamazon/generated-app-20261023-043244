@@ -52,7 +52,13 @@ import {
   FileSpreadsheet,
   Cpu,
   History,
-  CheckSquare
+  CheckSquare,
+  Bot,
+  Send,
+  Sliders,
+  SlidersHorizontal,
+  ThumbsUp,
+  ArrowUpDown
 } from "lucide-react";
 
 // Number formatter for Tomans
@@ -1473,24 +1479,43 @@ function SellerPanel({ authUser, authStore, categories, apiFetch, showNotificati
                 {bulkLoading ? "در حال بررسی..." : "اعتبارسنجی و پیش‌نمایش سطور"}
               </button>
 
-              {bulkPreview && (
-                <div className="space-y-3 pt-3 border-t">
-                  <div className="flex items-center gap-4 text-xs font-bold">
-                    <span className="text-slate-900">کل سطور: {bulkPreview.total_rows}</span>
-                    <span className="text-emerald-600">سطور معتبر: {bulkPreview.valid_rows_count}</span>
-                    <span className="text-rose-600">سطور دارای خطا: {bulkPreview.invalid_rows_count}</span>
-                  </div>
+	                  {bulkPreview && (
+	                <div className="space-y-3 pt-3 border-t">
+	                  <div className="flex items-center gap-4 text-xs font-bold">
+	                    <span className="text-slate-900">کل سطور: {bulkPreview.total_rows}</span>
+	                    <span className="text-emerald-600">سطور معتبر: {bulkPreview.valid_rows_count}</span>
+	                    <span className="text-rose-600">سطور دارای خطا: {bulkPreview.invalid_rows_count}</span>
+	                  </div>
 
-                  <div className="max-h-48 overflow-y-auto space-y-2 border rounded-xl p-2 text-xs">
-                    {bulkPreview.rows?.map((r, idx) => (
-                      <div key={idx} className={`p-2 rounded-lg border ${r.valid ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
-                        <span className="font-bold block">سطر {r.row_num}: {r.product_data?.title}</span>
-                        {r.errors?.map((err, eIdx) => (
-                          <span key={eIdx} className="text-rose-600 text-[11px] block">{err}</span>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+	                  <div className="max-h-48 overflow-y-auto space-y-2 border rounded-xl p-2 text-xs">
+	                    {bulkPreview.rows?.map((r, idx) => (
+	                      <div key={idx} className={`p-2 rounded-lg border ${r.valid ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
+	                        <span className="font-bold block">سطر {r.row_num}: {r.product_data?.title}</span>
+	                        {r.errors?.map((err, eIdx) => (
+	                          <span key={eIdx} className="text-rose-600 text-[11px] block">{err}</span>
+	                        ))}
+	                      </div>
+	                    ))}
+	                  </div>
+
+	                  {bulkPreview.valid_rows_count > 0 && (
+	                    <button
+	                      onClick={handleBulkImportCommit}
+	                      disabled={bulkLoading}
+	                      className="w-full py-3 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold text-xs rounded-xl shadow-lg transition-all"
+	                    >
+	                      ثبت نهایی {bulkPreview.valid_rows_count} محصول معتبر در انبار
+	                    </button>
+	                  )}
+	                </div>
+	              )}
+	            </div>
+	          </div>
+	        </div>
+	      )}
+	    </div>
+	  );
+	}
 
                   <button
                     onClick={handleBulkImportCommit}
