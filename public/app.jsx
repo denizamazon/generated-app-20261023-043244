@@ -46,7 +46,13 @@ import {
   Sparkles,
   MessageSquare,
   Lock,
-  ChevronRight
+  ChevronRight,
+  Upload,
+  Download,
+  FileSpreadsheet,
+  Cpu,
+  History,
+  CheckSquare
 } from "lucide-react";
 
 // Number formatter for Tomans
@@ -91,7 +97,6 @@ export function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(null);
   const [checkoutValidation, setCheckoutValidation] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -145,7 +150,6 @@ export function App() {
       setProducts(prds || []);
       setStores(strs || []);
 
-      // Check current auth user
       if (authToken) {
         try {
           const authData = await apiFetch("./api/auth/me");
@@ -194,7 +198,7 @@ export function App() {
 
   // Handle Login
   const handleLogin = async (e, email, password) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     try {
       const res = await apiFetch("./api/auth/login", {
         method: "POST",
@@ -240,19 +244,6 @@ export function App() {
       await loadCart();
       setIsCartOpen(true);
       showNotification("محصول به سبد خرید افزوده شد.");
-    } catch (err) {
-      showNotification(err.message, "error");
-    }
-  };
-
-  // Update Cart Qty
-  const updateCartQty = async (itemId, newQty) => {
-    try {
-      await apiFetch(`./api/cart/${itemId}`, {
-        method: "PUT",
-        body: JSON.stringify({ quantity: newQty })
-      });
-      await loadCart();
     } catch (err) {
       showNotification(err.message, "error");
     }
@@ -328,7 +319,7 @@ export function App() {
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
+      list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q));
     }
     if (priceSort === "price_asc") {
       list.sort((a, b) => (a.discount_price || a.price) - (b.discount_price || b.price));
@@ -340,7 +331,6 @@ export function App() {
     return list;
   }, [products, selectedCategory, searchScopeCategory, searchQuery, priceSort]);
 
-  // Total items in cart counter
   const totalCartCount = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }, [cartItems]);
@@ -367,7 +357,7 @@ export function App() {
             </span>
             <span className="hidden md:flex items-center gap-1 text-slate-300">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>ضمانت تجارت علی‌بابا (Trade Assurance) فعال است</span>
+              <span>سیستم هوشمند مدیریت محصولات شاهکار</span>
             </span>
           </div>
 
@@ -385,7 +375,7 @@ export function App() {
               className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
             >
               <Code className="w-3.5 h-3.5" />
-              <span>تست و پایش سلامت سیستم</span>
+              <span>تست و پایش سلامت سیستم (۱۰ لایه)</span>
             </button>
           </div>
         </div>
@@ -396,7 +386,7 @@ export function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5">
           <div className="flex items-center justify-between gap-4">
             
-            {/* Alibaba Styled Logo */}
+            {/* Logo */}
             <div 
               onClick={() => { setActiveTab("home"); setSelectedCategory(""); setSearchQuery(""); setSearchScopeCategory(""); }}
               className="flex items-center gap-3 cursor-pointer group"
@@ -407,17 +397,17 @@ export function App() {
               <div>
                 <div className="flex items-center gap-1.5">
                   <h1 className="font-extrabold text-2xl text-[#1E2229] leading-none tracking-tight">
-                    {settings.site_name || "علی‌بابا"}
+                    {settings.site_name || "شاهکار"}
                   </h1>
                   <span className="bg-[#FF6A00] text-white text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">
                     بازارگاه
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-500 font-semibold mt-1">پلتفرم بین‌المللی تجارت و چندفروشنده‌ای</p>
+                <p className="text-[10px] text-slate-500 font-semibold mt-1">سامانه هوشمند مدیریت محصولات و تجارت</p>
               </div>
             </div>
 
-            {/* Alibaba Multi-segment Search Box */}
+            {/* Search Box */}
             <div className="flex-1 max-w-3xl mx-2 hidden md:block">
               <form 
                 onSubmit={(e) => {
@@ -426,7 +416,6 @@ export function App() {
                 }}
                 className="relative flex items-center bg-[#F4F5F7] border-2 border-[#FF6A00] rounded-xl overflow-hidden shadow-sm"
               >
-                {/* Category Scope Dropdown */}
                 <select
                   value={searchScopeCategory}
                   onChange={(e) => setSearchScopeCategory(e.target.value)}
@@ -442,7 +431,7 @@ export function App() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="نام کالا، برند، کارخانه، تامین‌کننده یا شماره فنی..."
+                  placeholder="نام کالا، برند، کد SKU یا مشخصات فنی..."
                   className="w-full px-4 py-2.5 bg-transparent text-sm font-medium focus:outline-none text-slate-800 placeholder-slate-400"
                 />
 
@@ -456,10 +445,8 @@ export function App() {
               </form>
             </div>
 
-            {/* Header Action Buttons */}
+            {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
-              
-              {/* Cart Drawer Trigger */}
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative p-2.5 rounded-xl border border-slate-200 hover:border-[#FF6A00] hover:bg-orange-50 transition-all flex items-center gap-2 group"
@@ -474,7 +461,6 @@ export function App() {
                 )}
               </button>
 
-              {/* User Account / Auth Dropdown */}
               {authUser ? (
                 <div className="flex items-center gap-2">
                   <button
@@ -489,18 +475,16 @@ export function App() {
                     <span className="text-xs font-bold max-w-[100px] truncate">{authUser.full_name}</span>
                   </button>
 
-                  {/* Seller Panel Button */}
                   {authUser.role === "SELLER" && (
                     <button
                       onClick={() => setActiveTab("seller_panel")}
                       className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold transition-colors"
                     >
                       <Store className="w-4 h-4 text-emerald-600" />
-                      <span>مرکز فروشندگان</span>
+                      <span>مرکز مدیریت محصولات</span>
                     </button>
                   )}
 
-                  {/* Admin Panel Button */}
                   {authUser.role === "ADMIN" && (
                     <button
                       onClick={() => setActiveTab("admin_panel")}
@@ -528,21 +512,16 @@ export function App() {
                   <span>ورود / ثبت‌نام</span>
                 </button>
               )}
-
             </div>
           </div>
         </div>
 
-        {/* ALIBABA SECONDARY NAV BAR */}
+        {/* SECONDARY NAV BAR */}
         <nav className="bg-[#1E2229] text-white text-xs font-semibold border-t border-slate-800 overflow-x-auto scrollbar-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
             <div className="flex items-center space-x-reverse space-x-2 py-2">
-              
               <button
-                onClick={() => {
-                  setSelectedCategory("");
-                  setActiveTab("catalog");
-                }}
+                onClick={() => { setSelectedCategory(""); setActiveTab("catalog"); }}
                 className="bg-[#FF6A00] hover:bg-[#E05900] text-white font-black px-4 py-2 rounded-lg flex items-center gap-2 transition-colors whitespace-nowrap"
               >
                 <Layers className="w-4 h-4" />
@@ -554,23 +533,7 @@ export function App() {
                 className="hover:bg-slate-800 text-slate-200 hover:text-white px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
-                <span>کالاهای آماده ارسال (Ready to Ship)</span>
-              </button>
-
-              <button
-                onClick={() => { setSelectedCategory(""); setActiveTab("catalog"); }}
-                className="hover:bg-slate-800 text-slate-200 hover:text-white px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
-              >
-                <Award className="w-3.5 h-3.5 text-emerald-400" />
-                <span>تأمین‌کنندگان ارزیابی‌شده (Verified Suppliers)</span>
-              </button>
-
-              <button
-                onClick={() => setShowRfqModal(true)}
-                className="hover:bg-slate-800 text-slate-200 hover:text-white px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
-              >
-                <FileText className="w-3.5 h-3.5 text-[#FF6A00]" />
-                <span>مرکز استعلام قیمت (RFQ)</span>
+                <span>کالاهای آمادۀ ارسال (Ready to Ship)</span>
               </button>
 
               <button
@@ -583,494 +546,97 @@ export function App() {
                 }}
                 className="hover:bg-slate-800 text-slate-200 hover:text-white px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
               >
-                <Building2 className="w-3.5 h-3.5 text-blue-400" />
-                <span>فروشنده شوید (Sell on Alibaba)</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#FF6A00]" />
+                <span>مدیریت هوشمند محصولات و ورود CSV</span>
               </button>
-            </div>
-
-            <div className="hidden xl:flex items-center gap-4 text-slate-300 text-[11px] py-2">
-              <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> تضمین بازگشت کامل وجه
-              </span>
             </div>
           </div>
         </nav>
       </header>
 
-      {/* MAIN CONTENT AREA */}
+      {/* DYNAMIC CONTENT ROUTER */}
       <main className="flex-1">
-        {loading ? (
-          <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-            <div className="inline-block w-12 h-12 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-slate-600 font-bold text-sm">در حال دریافت اطلاعات بازارگاه بین‌المللی علي‌بابا...</p>
-          </div>
-        ) : (
-          <>
-            {activeTab === "home" && (
-              <HomePage
-                products={products}
-                categories={categories}
-                stores={stores}
-                onSelectCategory={(catId) => {
-                  setSelectedCategory(catId);
-                  setActiveTab("catalog");
-                }}
-                onSelectProduct={(id) => {
-                  setSelectedProductId(id);
-                  setActiveTab("product_detail");
-                }}
-                onSelectStore={(slug) => {
-                  setSelectedStoreSlug(slug);
-                  setActiveTab("store_detail");
-                }}
-                onAddToCart={addToCart}
-                onOpenRfq={() => setShowRfqModal(true)}
-              />
-            )}
+        {activeTab === "home" && (
+          <HomePage
+            products={products}
+            categories={categories}
+            stores={stores}
+            onSelectCategory={(catId) => {
+              setSelectedCategory(catId);
+              setActiveTab("catalog");
+            }}
+            onSelectProduct={(id) => {
+              setSelectedProductId(id);
+              setActiveTab("product_detail");
+            }}
+            onSelectStore={(slug) => {
+              setSelectedStoreSlug(slug);
+              setActiveTab("store_detail");
+            }}
+            onAddToCart={addToCart}
+            onOpenRfq={() => setShowRfqModal(true)}
+          />
+        )}
 
-            {activeTab === "catalog" && (
-              <CatalogPage
-                products={filteredProducts}
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                priceSort={priceSort}
-                onPriceSortChange={setPriceSort}
-                onSelectProduct={(id) => {
-                  setSelectedProductId(id);
-                  setActiveTab("product_detail");
-                }}
-                onAddToCart={addToCart}
-              />
-            )}
+        {activeTab === "catalog" && (
+          <CatalogPage
+            products={filteredProducts}
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            priceSort={priceSort}
+            onPriceSortChange={setPriceSort}
+            onSelectProduct={(id) => {
+              setSelectedProductId(id);
+              setActiveTab("product_detail");
+            }}
+            onAddToCart={addToCart}
+          />
+        )}
 
-            {activeTab === "product_detail" && selectedProductId && (
-              <ProductDetailPage
-                productId={selectedProductId}
-                apiFetch={apiFetch}
-                authUser={authUser}
-                onAddToCart={addToCart}
-                onBack={() => setActiveTab("catalog")}
-                showNotification={showNotification}
-                onOpenRfq={() => setShowRfqModal(true)}
-              />
-            )}
+        {activeTab === "product_detail" && (
+          <ProductDetailPage
+            productId={selectedProductId}
+            apiFetch={apiFetch}
+            authUser={authUser}
+            onAddToCart={addToCart}
+            onBack={() => setActiveTab("catalog")}
+            showNotification={showNotification}
+            onOpenRfq={() => setShowRfqModal(true)}
+          />
+        )}
 
-            {activeTab === "store_detail" && selectedStoreSlug && (
-              <StoreDetailPage
-                storeSlug={selectedStoreSlug}
-                onSelectProduct={(id) => {
-                  setSelectedProductId(id);
-                  setActiveTab("product_detail");
-                }}
-                onAddToCart={addToCart}
-              />
-            )}
+        {activeTab === "account" && (
+          <AccountDashboard
+            authUser={authUser}
+            addresses={addresses}
+            apiFetch={apiFetch}
+            loadAddresses={loadAddresses}
+            showNotification={showNotification}
+          />
+        )}
 
-            {activeTab === "account" && (
-              <AccountDashboard
-                authUser={authUser}
-                addresses={addresses}
-                apiFetch={apiFetch}
-                loadAddresses={loadAddresses}
-                showNotification={showNotification}
-              />
-            )}
+        {activeTab === "seller_panel" && (
+          <SellerPanel
+            authUser={authUser}
+            authStore={authStore}
+            categories={categories}
+            apiFetch={apiFetch}
+            showNotification={showNotification}
+            onRefreshProducts={loadInitialData}
+          />
+        )}
 
-            {activeTab === "seller_panel" && (
-              <SellerPanel
-                authUser={authUser}
-                authStore={authStore}
-                categories={categories}
-                apiFetch={apiFetch}
-                showNotification={showNotification}
-              />
-            )}
-
-            {activeTab === "admin_panel" && (
-              <AdminPanel
-                apiFetch={apiFetch}
-                showNotification={showNotification}
-                onReloadSystem={loadInitialData}
-              />
-            )}
-          </>
+        {activeTab === "admin_panel" && (
+          <AdminPanel
+            apiFetch={apiFetch}
+            showNotification={showNotification}
+            onReloadSystem={loadInitialData}
+          />
         )}
       </main>
-
-      {/* ALIBABA STYLED FOOTER */}
-      <footer className="bg-[#1E2229] text-slate-400 text-xs border-t border-slate-800 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-            <div>
-              <div className="flex items-center gap-2 mb-4 text-white">
-                <div className="w-8 h-8 rounded-lg bg-[#FF6A00] flex items-center justify-center font-black text-lg">a</div>
-                <span className="font-black text-lg tracking-tight">علی‌بابا بازارگاه</span>
-              </div>
-              <p className="leading-relaxed text-slate-400 mb-4">
-                بزرگ‌ترین بازارگاه بین‌المللی B2B و چندفروشنده‌ای برای خریداران، کارخانجات و تامین‌کنندگان معتبر با تضمین معامله (Trade Assurance).
-              </p>
-              <p className="text-slate-300 font-semibold">پشتیبانی بین‌المللی: {settings.contact_phone || "021-91008080"}</p>
-            </div>
-
-            <div>
-              <h4 className="font-extrabold text-white text-sm mb-4">خدمات خریداران</h4>
-              <ul className="space-y-2.5">
-                <li><button onClick={() => setActiveTab("home")} className="hover:text-[#FF6A00] transition-colors">صفحه اصلی بازارگاه</button></li>
-                <li><button onClick={() => { setSelectedCategory(""); setActiveTab("catalog"); }} className="hover:text-[#FF6A00] transition-colors">کاتالوگ کالاها و تامین‌کنندگان</button></li>
-                <li><button onClick={() => setShowRfqModal(true)} className="hover:text-[#FF6A00] transition-colors">ثبت درخواست استعلام قیمت (RFQ)</button></li>
-                <li><button onClick={handleRunTests} className="hover:text-amber-400 transition-colors">بررسی سلامت زیرساخت</button></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-extrabold text-white text-sm mb-4">حساب‌های کاربری آزمایشی</h4>
-              <ul className="space-y-2 text-[11px] text-slate-300">
-                <li className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-                  <span className="text-amber-400 font-bold block">مدیر کل:</span> admin@bazargah.ir / admin123
-                </li>
-                <li className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-                  <span className="text-emerald-400 font-bold block">فروشگاه تکنولوژی:</span> tech@bazargah.ir / seller123
-                </li>
-                <li className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-                  <span className="text-orange-400 font-bold block">خریدار نمونه:</span> user@bazargah.ir / user123
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-extrabold text-white text-sm mb-4">تضمین امنیت و کیفیت</h4>
-              <div className="space-y-3">
-                <div className="bg-slate-800 p-3.5 rounded-2xl border border-slate-700 flex items-center gap-3">
-                  <ShieldCheck className="w-8 h-8 text-emerald-400 shrink-0" />
-                  <div>
-                    <span className="text-xs font-bold text-white block">Trade Assurance</span>
-                    <span className="text-[10px] text-slate-400 block">تضمین ۱۰۰٪ امنیت معامله</span>
-                  </div>
-                </div>
-                <div className="bg-slate-800 p-3.5 rounded-2xl border border-slate-700 flex items-center gap-3">
-                  <Award className="w-8 h-8 text-[#FF6A00] shrink-0" />
-                  <div>
-                    <span className="text-xs font-bold text-white block">Verified Supplier Pro</span>
-                    <span className="text-[10px] text-slate-400 block">تأیید رسمی کارخانه و انبار</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-slate-800 text-center text-slate-500 text-[11px] flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>© ۲۰۲۶ تمام حقوق این سامانه متعلق به علی‌بابا بازارگاه می‌باشد.</span>
-            <span>طراحی بر پایه استانداردهای بین‌المللی Alibaba Global Marketplace</span>
-          </div>
-        </div>
-      </footer>
-
-      {/* CART DRAWER SIDEBAR */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="absolute inset-y-0 left-0 max-w-full flex">
-            <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col">
-              
-              <div className="px-6 py-4 bg-[#1E2229] text-white flex items-center justify-between border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-[#FF6A00]" />
-                  <h3 className="font-extrabold text-base">سبد خرید شما ({toFaDigits(cartItems.length)} کالا)</h3>
-                </div>
-                <button
-                  onClick={() => setIsCartOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                {cartItems.length === 0 ? (
-                  <div className="py-20 text-center text-slate-400">
-                    <ShoppingBag className="w-16 h-16 mx-auto mb-3 text-slate-300" />
-                    <p className="font-bold text-slate-700">سبد خرید شما خالی است.</p>
-                    <p className="text-xs text-slate-500 mt-1">محصولات مورد نظر خود را انتخاب کنید.</p>
-                  </div>
-                ) : (
-                  <>
-                    {cartItems.map((item) => {
-                      const imgs = item.images_json ? JSON.parse(item.images_json) : [];
-                      const effectivePrice = item.discount_price ? item.discount_price : item.price;
-
-                      return (
-                        <div key={item.cart_item_id} className="flex gap-3 p-3.5 rounded-2xl border border-slate-200 bg-[#F4F5F7]">
-                          <img
-                            src={imgs[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200"}
-                            alt={item.title}
-                            className="w-16 h-16 object-cover rounded-xl border border-slate-200 bg-white"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-xs font-bold text-slate-900 truncate">{item.title}</h4>
-                            <p className="text-[11px] text-slate-500 mt-0.5">فروشنده: {item.store_name}</p>
-                            
-                            <div className="mt-2 flex items-center justify-between">
-                              <div className="flex items-center border border-slate-300 rounded-lg bg-white">
-                                <button
-                                  onClick={() => updateCartQty(item.cart_item_id, item.quantity - 1)}
-                                  className="px-2.5 py-1 text-slate-600 hover:bg-slate-100 rounded-r-lg font-bold"
-                                >
-                                  -
-                                </button>
-                                <span className="px-3 text-xs font-extrabold text-slate-900">{toFaDigits(item.quantity)}</span>
-                                <button
-                                  onClick={() => updateCartQty(item.cart_item_id, item.quantity + 1)}
-                                  className="px-2.5 py-1 text-slate-600 hover:bg-slate-100 rounded-l-lg font-bold"
-                                >
-                                  +
-                                </button>
-                              </div>
-
-                              <div className="text-left">
-                                <span className="text-xs font-black text-[#FF6A00] block">
-                                  {formatPrice(effectivePrice * item.quantity)} تومان
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Address Selection */}
-                    <div className="pt-4 border-t border-slate-200">
-                      <label className="block text-xs font-bold text-slate-800 mb-2 flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-[#FF6A00]" /> آدرس تحویل سفارش
-                      </label>
-                      {addresses.length === 0 ? (
-                        <p className="text-xs text-rose-600 font-semibold">آدرسی یافت نشد. لطفاً در پنل کاربری آدرس خود را ثبت نمایید.</p>
-                      ) : (
-                        <select
-                          value={selectedAddressId}
-                          onChange={(e) => setSelectedAddressId(e.target.value)}
-                          className="w-full text-xs p-3 rounded-xl border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
-                        >
-                          {addresses.map((addr) => (
-                            <option key={addr.id} value={addr.id}>
-                              {addr.title}: {addr.city} - {addr.address.substring(0, 30)}...
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {/* Coupon Input */}
-                    <div className="pt-2">
-                      <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
-                        <Tag className="w-3.5 h-3.5 text-amber-600" /> کد تخفیف
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          placeholder="مثلاً: BAZAR2026"
-                          className="flex-1 text-xs px-3 py-2 border border-slate-300 rounded-xl uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
-                        />
-                        <button
-                          onClick={handleValidateCheckout}
-                          className="px-4 py-2 bg-[#1E2229] hover:bg-black text-white rounded-xl text-xs font-bold transition-colors"
-                        >
-                          اعمال
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {cartItems.length > 0 && checkoutValidation && (
-                <div className="p-6 bg-slate-50 border-t border-slate-200 space-y-2">
-                  <div className="flex justify-between text-xs text-slate-600">
-                    <span>جمع کل کالاها:</span>
-                    <span>{formatPrice(checkoutValidation.subtotal)} تومان</span>
-                  </div>
-                  {checkoutValidation.discountAmount > 0 && (
-                    <div className="flex justify-between text-xs text-emerald-600 font-bold">
-                      <span>تخفیف کد ({checkoutValidation.couponApplied}):</span>
-                      <span>- {formatPrice(checkoutValidation.discountAmount)} تومان</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-xs text-slate-600">
-                    <span>هزینه ارسال:</span>
-                    <span>{checkoutValidation.shippingCost === 0 ? "رایگان" : `${formatPrice(checkoutValidation.shippingCost)} تومان`}</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-black text-slate-900 pt-3 border-t border-slate-200">
-                    <span>مبلغ قابل پرداخت:</span>
-                    <span className="text-[#FF6A00] text-lg">{formatPrice(checkoutValidation.totalAmount)} تومان</span>
-                  </div>
-
-                  <button
-                    onClick={() => setShowPaymentModal(true)}
-                    className="w-full mt-4 py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold rounded-xl text-sm shadow-xl shadow-orange-500/20 transition-all flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="w-5 h-5" />
-                    <span>پرداخت با تضمین معامله (Trade Assurance)</span>
-                  </button>
-                </div>
-              )}
-
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MOCK PAYMENT GATEWAY MODAL */}
-      {showPaymentModal && checkoutValidation && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200">
-            <div className="bg-gradient-to-r from-[#1E2229] to-slate-900 p-6 text-white text-center relative border-b border-slate-800">
-              <ShieldCheck className="w-12 h-12 mx-auto text-emerald-400 mb-2" />
-              <h3 className="font-black text-lg">پرداخت امن Trade Assurance</h3>
-              <p className="text-xs text-slate-300 mt-1">وجه تا زمان تحویل و تأیید سلامت کالا محفوظ می‌ماند</p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="p-4 bg-orange-50/80 rounded-2xl border border-orange-200 text-center">
-                <span className="text-xs text-slate-600 block mb-1">مبلغ پرداختی فاکتور:</span>
-                <span className="text-2xl font-black text-[#FF6A00]">{formatPrice(checkoutValidation.totalAmount)} تومان</span>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1">شماره کارت بانکی ۱۶ رقمی</label>
-                  <input
-                    type="text"
-                    defaultValue="6037 - 9918 - 2381 - 4402"
-                    className="w-full text-center text-sm font-mono tracking-widest p-3 rounded-xl border border-slate-300 bg-slate-50"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1">CVV2</label>
-                    <input type="text" defaultValue="391" className="w-full text-center text-sm font-mono p-3 rounded-xl border border-slate-300 bg-slate-50" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1">رمز پویا (SMS)</label>
-                    <input type="text" defaultValue="849201" className="w-full text-center text-sm font-mono p-3 rounded-xl border border-slate-300 bg-slate-50" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 space-y-2">
-                <button
-                  onClick={handleExecutePayment}
-                  disabled={paymentLoading}
-                  className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30"
-                >
-                  {paymentLoading ? (
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span>تأیید نهایی و پرداخت آنلاین</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="w-full py-2.5 text-slate-500 hover:text-slate-800 text-xs font-bold"
-                >
-                  انصراف
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* RFQ MODAL */}
-      {showRfqModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200">
-            <div className="bg-[#1E2229] p-6 text-white flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-6 h-6 text-[#FF6A00]" />
-                <div>
-                  <h3 className="font-extrabold text-base">درخواست استعلام قیمت عمده (RFQ)</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">دریافت پیشنهاد قیمت از تامین‌کنندگان و کارخانجات معتبر</p>
-                </div>
-              </div>
-              <button onClick={() => { setShowRfqModal(false); setRfqSuccess(false); }} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {rfqSuccess ? (
-                <div className="py-8 text-center space-y-3">
-                  <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto" />
-                  <h4 className="font-extrabold text-lg text-slate-900">درخواست شما با موفقیت ثبت گردید!</h4>
-                  <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
-                    پیشنهادات قیمت تامین‌کنندگان ظرف کمتر از ۲۴ ساعت به صندوق پیام‌ها و ایمیل شما ارسال خواهد شد.
-                  </p>
-                  <button
-                    onClick={() => { setShowRfqModal(false); setRfqSuccess(false); }}
-                    className="mt-4 px-6 py-2.5 bg-[#FF6A00] text-white text-xs font-bold rounded-xl"
-                  >
-                    متوجه شدم
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={(e) => { e.preventDefault(); setRfqSuccess(true); }} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1">عنوان کالا یا تجهیزات مورد نیاز</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="مثلاً: ۱۰۰۰ عدد لپ‌تاپ یا قطعات صنعتی..."
-                      className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-800 mb-1">تعداد / تیراژ مورد نیاز</label>
-                      <input
-                        type="number"
-                        required
-                        placeholder="مثلاً: ۵۰"
-                        className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-800 mb-1">دسته‌بندی مرتبط</label>
-                      <select className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none">
-                        {categories.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name_fa}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 mb-1">توضیحات و مشخصات فنی لازم</label>
-                    <textarea
-                      rows={3}
-                      placeholder="برند مد نظر، زمان تحویل، استانداردهای خاص..."
-                      className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                    ></textarea>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold rounded-xl text-xs shadow-lg transition-all"
-                  >
-                    ارسال استعلام به تمام تامین‌کنندگان معتبر
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* SYSTEM TESTS MODAL */}
       {showTestsModal && (
@@ -1079,7 +645,7 @@ export function App() {
             <div className="bg-[#1E2229] p-5 text-white flex items-center justify-between border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <Code className="w-5 h-5 text-amber-400" />
-                <h3 className="font-extrabold text-base">گزارش پایش سلامت و آزمون‌های یکپارچگی سیستم</h3>
+                <h3 className="font-extrabold text-base">گزارش آزمون‌های سلامت و پایگاه داده شاهکار</h3>
               </div>
               <button onClick={() => setShowTestsModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
                 <X className="w-5 h-5" />
@@ -1090,7 +656,7 @@ export function App() {
               {testsLoading ? (
                 <div className="py-12 text-center">
                   <RefreshCw className="w-10 h-10 text-[#FF6A00] animate-spin mx-auto mb-3" />
-                  <p className="text-xs font-bold text-slate-600">در حال اجرای آزمون‌های محاسباتی، انبار و دسترسی‌ها...</p>
+                  <p className="text-xs font-bold text-slate-600">در حال اجرای آزمون‌های یکپارچگی کالاها، الگوریتم‌های AI و امنیت...</p>
                 </div>
               ) : testResults ? (
                 <div className="space-y-4">
@@ -1142,21 +708,17 @@ export function App() {
   );
 }
 
-// ALIBABA HOME PAGE COMPONENT
+// HOME PAGE
 function HomePage({ products, categories, stores, onSelectCategory, onSelectProduct, onSelectStore, onAddToCart, onOpenRfq }) {
   const featuredProducts = products.filter((p) => p.is_featured || p.discount_price);
 
   return (
     <div className="space-y-10 pb-16">
-      
-      {/* ALIBABA HERO SECTION: 3 COLUMNS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          
-          {/* Column 1: Vertical Categories Sidebar */}
           <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-3 shadow-sm hidden lg:block">
             <h3 className="text-xs font-black text-slate-900 px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-              <span>دسته‌بندی کالاها</span>
+              <span>دسته‌بندی اصلی محصولات</span>
               <ChevronLeft className="w-4 h-4 text-slate-400" />
             </h3>
             <div className="mt-2 space-y-1">
@@ -1178,26 +740,19 @@ function HomePage({ products, categories, stores, onSelectCategory, onSelectProd
             </div>
           </div>
 
-          {/* Column 2: Alibaba Main Hero Banner */}
           <div className="lg:col-span-6 flex flex-col justify-between">
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1E2229] via-slate-900 to-[#1E2229] text-white p-7 sm:p-10 shadow-xl border border-slate-800 flex-1 flex flex-col justify-between">
-              
               <div className="relative z-10 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="bg-[#FF6A00] text-white font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                    جشنواره تامین‌کنندگان معتبر
-                  </span>
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Trade Assurance
-                  </span>
-                </div>
+                <span className="bg-[#FF6A00] text-white font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-block">
+                  سیستم هوشمند مدیریت و تولید اطلاعات کالا
+                </span>
 
                 <h2 className="text-xl sm:text-3xl font-black leading-snug text-white">
-                  بازارگاه بین‌المللی تجارت و خریدهای عمومی و عمده
+                  بازارگاه بین‌المللی شاهکار با پشتیبانی از هوش مصنوعی و ورود گروهی
                 </h2>
 
                 <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-lg">
-                  اتصال مستقیم به بیش از هزاران کارخانه، عمده‌فروش و تامین‌کننده ارزیابی‌شده با تضمین اصالت و بازگشت وجه.
+                  امکان ورود یکباره کالاها از فایل CSV، تولید عنوان و مشخصات با دستیار AI و پایش ارزیابی کیفیت.
                 </p>
               </div>
 
@@ -1206,142 +761,34 @@ function HomePage({ products, categories, stores, onSelectCategory, onSelectProd
                   onClick={() => onSelectCategory("")}
                   className="px-6 py-3 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2"
                 >
-                  <span>جستجو و مشاهده کالاها</span>
+                  <span>مشاهده کاتالوگ محصولات</span>
                   <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={onOpenRfq}
-                  className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all"
-                >
-                  درخواست استعلام قیمت (RFQ)
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Column 3: Interactive Buyer Action Box */}
           <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-[#FF6A00] font-black">
-                  <User className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">خوش آمدید به علی‌بابا</h4>
-                  <p className="text-[10px] text-slate-500">پلتفرم تجارت امن بین‌المللی</p>
+                  <h4 className="font-extrabold text-xs text-slate-900">دستیار هوش مصنوعی</h4>
+                  <p className="text-[10px] text-slate-500">تولید محتوا و سئو کالاها</p>
                 </div>
               </div>
-
-              <div className="pt-2 border-t border-slate-100 space-y-2">
-                <button
-                  onClick={onOpenRfq}
-                  className="w-full py-2.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>ثبت استعلام قیمت سریع</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-              <span className="text-[10px] font-black text-slate-900 block flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> تضمین معامله (Trade Assurance)
-              </span>
-              <ul className="text-[10px] text-slate-600 space-y-1">
-                <li className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> بازرسی اصالت و کیفیت کالا</li>
-                <li className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> تضمین تحویل در زمان مقرر</li>
-                <li className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> بازگشت وجه در صورت عدم تطابق</li>
-              </ul>
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* VALUE PROPOSITION BADGES (ALIBABA 4 PILLARS) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 flex items-center gap-4 hover:border-[#FF6A00] transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-orange-50 text-[#FF6A00] flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900">Trade Assurance</h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">تضمین ۱۰۰٪ امنیت معامله و تحویل</p>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 flex items-center gap-4 hover:border-[#FF6A00] transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <Award className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900">Verified Supplier Pro</h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">تأیید رسمی کارخانه و انبار فروشنده</p>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 flex items-center gap-4 hover:border-[#FF6A00] transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Zap className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900">Ready to Ship</h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">ارسال فوری از انبار آماده تامین‌کننده</p>
-            </div>
-          </div>
-
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 flex items-center gap-4 hover:border-[#FF6A00] transition-all">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="font-extrabold text-xs text-slate-900">خرید مستقیم عمده</h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">قیمت کارخانه بدون واسطه</p>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* INSTANT RFQ CALLOUT BANNER */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="bg-gradient-to-r from-[#1E2229] via-slate-900 to-[#1E2229] rounded-3xl p-6 sm:p-8 text-white flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-800 shadow-xl">
-          <div className="space-y-2 text-center md:text-right">
-            <span className="bg-[#FF6A00] text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
-              درخواست استعلام قیمت (RFQ)
-            </span>
-            <h3 className="text-lg sm:text-xl font-black text-white">نیازمند خرید عمده یا سفارش خاص از کارخانجات هستید؟</h3>
-            <p className="text-xs text-slate-300 max-w-xl">
-              مشخصات کالای مد نظر خود را بفرستید تا تامین‌کنندگان ارزیابی‌شده ظرف ۲۴ ساعت بهترین پیشنهاد قیمت را ارسال کنند.
-            </p>
-          </div>
-          <button
-            onClick={onOpenRfq}
-            className="px-6 py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white text-xs font-black rounded-2xl shadow-lg shadow-orange-500/30 whitespace-nowrap transition-all hover:scale-105"
-          >
-            ثبت درخواست استعلام قیمت (RFQ)
-          </button>
-        </div>
-      </section>
-
-      {/* FEATURED & DISCOUNTED PRODUCTS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <Tag className="w-5 h-5 text-[#FF6A00]" /> پیشنهادهای ویژه و کالاهای پرفروش
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">محصولات منتخب با ضمانت اصالت و تخفیف مستقیم تامین‌کننده</p>
-          </div>
-          <button
-            onClick={() => onSelectCategory("")}
-            className="text-xs font-bold text-[#FF6A00] hover:text-orange-700 flex items-center gap-1"
-          >
-            <span>مشاهده همه کالاها</span> <ChevronLeft className="w-4 h-4" />
-          </button>
+          <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+            <Tag className="w-5 h-5 text-[#FF6A00]" /> کالاها و محصولات پرفروش شاهکار
+          </h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -1355,98 +802,37 @@ function HomePage({ products, categories, stores, onSelectCategory, onSelectProd
           ))}
         </div>
       </section>
-
-      {/* VERIFIED SUPPLIERS SHOWCASE */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-          <div className="mb-6 flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <Award className="w-5 h-5 text-emerald-600" /> تأمین‌کنندگان و کارخانجات ارزیابی‌شده (Verified Suppliers)
-              </h3>
-              <p className="text-xs text-slate-500 mt-1">فروشگاه‌های دارای تأییدیه رسمی خط تولید، مدارک ثبتی و بازرسی مستقل</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {stores.map((st) => (
-              <div
-                key={st.id}
-                onClick={() => onSelectStore(st.slug)}
-                className="bg-[#F4F5F7] rounded-2xl p-5 border border-slate-200 hover:border-[#FF6A00] hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-start gap-3 mb-3">
-                    <img
-                      src={st.logo_url || "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=200"}
-                      alt={st.store_name}
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 bg-white"
-                    />
-                    <div>
-                      <h4 className="font-extrabold text-sm text-slate-900 group-hover:text-[#FF6A00] transition-colors">{st.store_name}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
-                          <Check className="w-3 h-3 stroke-[3]" /> Verified Pro
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-bold">۵ سال در بازارگاه</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mt-2">{st.description}</p>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-slate-200/80 flex items-center justify-between text-xs text-slate-600">
-                  <span className="flex items-center gap-1 text-amber-600 font-extrabold">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {toFaDigits(st.rating || 5.0)} (رضایت خریداران)
-                  </span>
-                  <span className="text-[#FF6A00] font-bold text-xs flex items-center gap-1 group-hover:underline">
-                    <span>مشاهده فروشگاه</span>
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
     </div>
   );
 }
 
-// ALIBABA PRODUCT CARD COMPONENT
+// PRODUCT CARD
 function ProductCard({ product, onSelect, onAddToCart }) {
   const imgs = product.images_json ? JSON.parse(product.images_json) : [];
-  const mainImg = imgs[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800";
+  const mainImg = imgs[product.main_image_index || 0] || imgs[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800";
   const hasDiscount = product.discount_price && product.discount_price < product.price;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:border-[#FF6A00] transition-all flex flex-col group">
-      
-      {/* Product Image & Badges */}
       <div className="relative aspect-square overflow-hidden bg-slate-100 cursor-pointer" onClick={() => onSelect(product.id)}>
         <img
           src={mainImg}
           alt={product.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-
-        <div className="absolute top-2 right-2 flex flex-col gap-1">
-          {hasDiscount && (
-            <span className="bg-rose-600 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-md shadow">
-              تخفیف ویژه
-            </span>
-          )}
-          <span className="bg-emerald-600 text-white font-bold text-[9px] px-1.5 py-0.5 rounded-md shadow flex items-center gap-0.5">
-            <Check className="w-2.5 h-2.5 stroke-[3]" /> Verified
+        {product.brand && (
+          <span className="absolute top-2 right-2 bg-slate-900/80 text-white font-bold text-[9px] px-2 py-0.5 rounded-md backdrop-blur">
+            {product.brand}
           </span>
-        </div>
+        )}
       </div>
 
-      {/* Product Info */}
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div className="cursor-pointer space-y-1.5" onClick={() => onSelect(product.id)}>
-          <span className="text-[10px] font-bold text-slate-400 block truncate">فروشگاه: {product.store_name}</span>
+          <div className="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+            <span>فروشگاه: {product.store_name}</span>
+            {product.sku && <span className="bg-slate-100 px-1.5 py-0.5 rounded">SKU: {product.sku}</span>}
+          </div>
           <h4 className="font-extrabold text-xs text-slate-900 group-hover:text-[#FF6A00] transition-colors line-clamp-2 leading-relaxed">
             {product.title}
           </h4>
@@ -1454,7 +840,6 @@ function ProductCard({ product, onSelect, onAddToCart }) {
 
         <div className="space-y-2 pt-2 border-t border-slate-100">
           <div className="flex items-baseline justify-between">
-            <span className="text-[10px] text-slate-400 font-bold">حداقل سفارش: ۱ عدد</span>
             {hasDiscount ? (
               <div className="text-left">
                 <span className="text-[11px] text-slate-400 line-through block">{formatPrice(product.price)}</span>
@@ -1477,12 +862,11 @@ function ProductCard({ product, onSelect, onAddToCart }) {
           </button>
         </div>
       </div>
-
     </div>
   );
 }
 
-// CATALOG PAGE COMPONENT
+// CATALOG PAGE
 function CatalogPage({
   products,
   categories,
@@ -1497,15 +881,12 @@ function CatalogPage({
 }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      
-      {/* Header Info */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div>
-          <h2 className="text-xl font-black text-slate-900">کاتالوگ کالاها و محصولات علی‌بابا</h2>
-          <p className="text-xs text-slate-500 mt-1">نمایش محصولات ارزیابی‌شده با تضمین کیفیت و ارسال سریع</p>
+          <h2 className="text-xl font-black text-slate-900">کاتالوگ کالاها و محصولات شاهکار</h2>
+          <p className="text-xs text-slate-500 mt-1">نمایش محصولات تأییدشده با اطلاعات کامل و مشخصات ساختاریافته</p>
         </div>
 
-        {/* Sorting Dropdown */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-600">مرتب‌سازی:</span>
           <select
@@ -1521,12 +902,10 @@ function CatalogPage({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Filter Sidebar */}
         <div className="lg:col-span-3 space-y-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h3 className="font-extrabold text-xs text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#FF6A00]" /> فیلتر دسته‌بندی‌ها
+              <Filter className="w-4 h-4 text-[#FF6A00]" /> دسته‌بندی‌ها
             </h3>
 
             <div className="space-y-1">
@@ -1551,32 +930,13 @@ function CatalogPage({
               ))}
             </div>
           </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            <h3 className="font-extrabold text-xs text-slate-900 pb-2 border-b border-slate-100">نوع فروشنده</h3>
-            <label className="flex items-center gap-2 text-xs text-slate-700 font-bold cursor-pointer">
-              <input type="checkbox" defaultChecked className="rounded text-[#FF6A00] focus:ring-[#FF6A00]" />
-              <span>Verified Supplier Pro</span>
-            </label>
-            <label className="flex items-center gap-2 text-xs text-slate-700 font-bold cursor-pointer">
-              <input type="checkbox" defaultChecked className="rounded text-[#FF6A00] focus:ring-[#FF6A00]" />
-              <span>دارای Trade Assurance</span>
-            </label>
-          </div>
         </div>
 
-        {/* Product Grid */}
         <div className="lg:col-span-9">
           {products.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 text-center text-slate-400 border border-slate-200">
               <Package className="w-16 h-16 mx-auto mb-3 text-slate-300" />
-              <p className="font-bold text-slate-700">هیچ کالایی با مشخصات انتخابی یافت نشد.</p>
-              <button
-                onClick={() => { onSelectCategory(""); onSearchChange(""); }}
-                className="mt-4 px-4 py-2 bg-[#FF6A00] text-white text-xs font-bold rounded-xl"
-              >
-                پاکسازی فیلترها
-              </button>
+              <p className="font-bold text-slate-700">هیچ کالایی یافت نشد.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -1591,20 +951,18 @@ function CatalogPage({
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
 }
 
-// PRODUCT DETAIL PAGE COMPONENT
+// PRODUCT DETAIL PAGE
 function ProductDetailPage({ productId, apiFetch, authUser, onAddToCart, onBack, showNotification, onOpenRfq }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState([]);
-  const [newReviewText, setNewReviewText] = useState("");
-  const [newRating, setNewRating] = useState(5);
+  const [historyLogs, setHistoryLogs] = useState([]);
 
   const loadProduct = async () => {
     try {
@@ -1613,6 +971,8 @@ function ProductDetailPage({ productId, apiFetch, authUser, onAddToCart, onBack,
       setProduct(data);
       const revs = await apiFetch(`./api/products/${productId}/reviews`);
       setReviews(revs || []);
+      const hst = await apiFetch(`./api/products/${productId}/history`);
+      setHistoryLogs(hst || []);
     } catch (err) {
       showNotification(err.message, "error");
     } finally {
@@ -1624,84 +984,43 @@ function ProductDetailPage({ productId, apiFetch, authUser, onAddToCart, onBack,
     loadProduct();
   }, [productId]);
 
-  const handleAddReview = async (e) => {
-    e.preventDefault();
-    if (!authUser) {
-      showNotification("برای ثبت نظر وارد حساب شوید.", "error");
-      return;
-    }
-    try {
-      await apiFetch(`./api/products/${productId}/reviews`, {
-        method: "POST",
-        body: JSON.stringify({ rating: newRating, comment: newReviewText })
-      });
-      setNewReviewText("");
-      showNotification("نظر شما ثبت گردید.");
-      loadProduct();
-    } catch (err) {
-      showNotification(err.message, "error");
-    }
-  };
-
   if (loading || !product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <RefreshCw className="w-10 h-10 text-[#FF6A00] animate-spin mx-auto mb-3" />
-        <p className="text-xs font-bold text-slate-600">در حال دریافت اطلاعات کالا...</p>
+        <p className="text-xs font-bold text-slate-600">در حال دریافت اطلاعات جامع کالا...</p>
       </div>
     );
   }
 
   const imgs = product.images_json ? JSON.parse(product.images_json) : [];
-  const mainImg = imgs[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800";
-  const effectivePrice = product.discount_price ? product.discount_price : product.price;
+  const specs = product.specs_json ? JSON.parse(product.specs_json) : [];
+  const mainImg = imgs[product.main_image_index || 0] || imgs[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      
-      {/* Back Button */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-[#FF6A00] transition-colors"
-      >
+      <button onClick={onBack} className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-[#FF6A00]">
         <ChevronRight className="w-4 h-4" />
-        <span>بازگشت به فهرست کالاها</span>
+        <span>بازگشت به فهرست</span>
       </button>
 
-      {/* Main Product Details Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left/Middle Column: Image & Details */}
         <div className="lg:col-span-8 space-y-8">
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
-            
-            {/* Gallery Image */}
             <div className="space-y-3">
               <div className="aspect-square rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
                 <img src={mainImg} alt={product.title} className="w-full h-full object-cover" />
               </div>
             </div>
 
-            {/* Title & Pricing */}
             <div className="space-y-4">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-400 block">دسته‌بندی: {product.category_name}</span>
+              <div>
+                <span className="text-xs font-bold text-slate-400 block">برند: {product.brand || "نامشخص"} | SKU: {product.sku || "N/A"}</span>
                 <h1 className="text-lg font-black text-slate-900 leading-snug">{product.title}</h1>
               </div>
 
-              {/* Verified Tag */}
-              <div className="flex items-center gap-2">
-                <span className="bg-emerald-100 text-emerald-800 font-extrabold text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" /> Verified Supplier
-                </span>
-                <span className="bg-orange-100 text-[#FF6A00] font-extrabold text-[11px] px-2.5 py-1 rounded-lg flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Trade Assurance
-                </span>
-              </div>
-
-              {/* Price Display */}
               <div className="p-4 bg-orange-50/60 rounded-2xl border border-orange-200 space-y-1">
-                <span className="text-xs text-slate-500 font-bold block">قیمت واحد برای خریداران:</span>
+                <span className="text-xs text-slate-500 font-bold block">قیمت محصول:</span>
                 {product.discount_price ? (
                   <div>
                     <span className="text-xs text-slate-400 line-through ml-2">{formatPrice(product.price)}</span>
@@ -1712,240 +1031,92 @@ function ProductDetailPage({ productId, apiFetch, authUser, onAddToCart, onBack,
                 )}
               </div>
 
-              {/* Quantity Selector */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-800">تعداد سفارش:</label>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center border border-slate-300 rounded-xl bg-white p-1">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-1 font-bold text-slate-700 hover:bg-slate-100 rounded-lg">-</button>
-                    <span className="px-4 font-black text-sm">{toFaDigits(quantity)}</span>
-                    <button onClick={() => setQuantity(quantity + 1)} className="px-3 py-1 font-bold text-slate-700 hover:bg-slate-100 rounded-lg">+</button>
-                  </div>
-                  <span className="text-xs text-slate-500 font-bold">موجودی انبار: {toFaDigits(product.stock_quantity)} عدد</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="pt-4 space-y-2">
-                <button
-                  onClick={() => onAddToCart(product.id, quantity)}
-                  className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold text-xs rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>افزودن به سبد خرید</span>
-                </button>
-
-                <button
-                  onClick={onOpenRfq}
-                  className="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <FileText className="w-4 h-4 text-[#FF6A00]" />
-                  <span>استعلام قیمت عمده و تیراژ بالا (RFQ)</span>
-                </button>
-              </div>
-
+              <button
+                onClick={() => onAddToCart(product.id, quantity)}
+                className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>افزودن به سبد خرید</span>
+              </button>
             </div>
-
           </div>
 
-          {/* Description & Specs */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="font-black text-base text-slate-900 border-b border-slate-100 pb-3">توضیحات و مشخصات کالا</h3>
-            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{product.description || "توضیحاتی ثبت نشده است."}</p>
-          </div>
-
-          {/* Reviews Section */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
-            <h3 className="font-black text-base text-slate-900 border-b border-slate-100 pb-3">نظرات خریداران ({toFaDigits(reviews.length)})</h3>
-
-            {/* Review Form */}
-            <form onSubmit={handleAddReview} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <span className="text-xs font-bold text-slate-800 block">ثبت نظر جدید:</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-600">امتیاز شما:</span>
-                <select value={newRating} onChange={(e) => setNewRating(Number(e.target.value))} className="text-xs p-1.5 border border-slate-300 rounded-lg">
-                  <option value={5}>⭐⭐⭐⭐⭐ ( عالی )</option>
-                  <option value={4}>⭐⭐⭐⭐ ( خوب )</option>
-                  <option value={3}>⭐⭐⭐ ( متوسط )</option>
-                  <option value={2}>⭐⭐ ( ضعیف )</option>
-                  <option value={1}>⭐ ( خیلی ضعیف )</option>
-                </select>
-              </div>
-              <textarea
-                rows={2}
-                value={newReviewText}
-                onChange={(e) => setNewReviewText(e.target.value)}
-                placeholder="تجربه خریدار و کیفیت کالا..."
-                className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
-              ></textarea>
-              <button type="submit" className="px-4 py-2 bg-[#FF6A00] text-white font-bold text-xs rounded-xl">ثبت نظر</button>
-            </form>
-
-            <div className="space-y-3">
-              {reviews.map((r) => (
-                <div key={r.id} className="p-4 bg-[#F4F5F7] rounded-2xl border border-slate-200 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900">{r.user_name}</span>
-                    <span className="text-amber-500 font-bold text-xs flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-amber-400" /> {toFaDigits(r.rating)}/۵
-                    </span>
+          {/* Structured Specs Table */}
+          {specs.length > 0 && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+              <h3 className="font-black text-sm text-slate-900 border-b pb-2">مشخصات فنی ساختاریافته</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {specs.map((sp, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between">
+                    <span className="font-bold text-slate-500">{sp.name}:</span>
+                    <span className="font-extrabold text-slate-900">{sp.value}</span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1">{r.comment}</p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Description */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+            <h3 className="font-black text-sm text-slate-900 border-b pb-2">توضیحات جامع محصول</h3>
+            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{product.description || "توضیحی ثبت نشده است."}</p>
+          </div>
+        </div>
+
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+            <h3 className="font-black text-xs text-slate-900 border-b pb-2">سوابق تغییرات و ویرایش‌ها (Audit History)</h3>
+            <div className="space-y-2 text-[11px]">
+              {historyLogs.map((h) => (
+                <div key={h.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between">
+                  <span className="font-bold text-slate-700">{h.change_type}</span>
+                  <span className="text-slate-400">{new Date(h.created_at).toLocaleDateString("fa-IR")}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-
-        {/* Right Sidebar: Supplier Box */}
-        <div className="lg:col-span-4 space-y-6">
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-            <h3 className="font-black text-xs text-slate-900 pb-3 border-b border-slate-100 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-[#FF6A00]" /> اطلاعات فروشگاه تامین‌کننده
-            </h3>
-
-            <div className="space-y-3">
-              <h4 className="font-black text-sm text-slate-900">{product.store_name}</h4>
-              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-bold flex items-center gap-2">
-                <Check className="w-4 h-4 stroke-[3]" /> Verified Supplier Pro (تأیید رسمی)
-              </div>
-
-              <ul className="text-xs text-slate-600 space-y-2 pt-2 border-t border-slate-100">
-                <li className="flex justify-between">
-                  <span>سابقه در بازارگاه:</span>
-                  <span className="font-bold text-slate-900">۵ سال فعال</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>میزان رضایت خریداران:</span>
-                  <span className="font-bold text-amber-600">۴.۹ / ۵</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>زمان پاسخگویی:</span>
-                  <span className="font-bold text-emerald-600">کمتر از ۱ ساعت</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="bg-[#1E2229] rounded-3xl p-6 text-white space-y-3">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-emerald-400" />
-              <h4 className="font-black text-xs text-white">Trade Assurance Protection</h4>
-            </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">
-              با پرداخت آنلاین در سامانه علی‌بابا، مبلغ پرداختی تا زمان تحویل فیزیکی کالا و تایید کیفیت توسط شما به امانت می‌ماند.
-            </p>
-          </div>
-        </div>
-
       </div>
     </div>
   );
 }
 
-// STORE DETAIL PAGE COMPONENT
-function StoreDetailPage({ storeSlug, onSelectProduct, onAddToCart }) {
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 text-center">
-      <Building2 className="w-16 h-16 text-[#FF6A00] mx-auto mb-3" />
-      <h2 className="text-xl font-black text-slate-900">غرفه اختصاصی فروشگاه</h2>
-      <p className="text-xs text-slate-500 mt-1">کلیه محصولات این تامین‌کننده دارای ضمانت کیفیت می‌باشند.</p>
-    </div>
-  );
-}
-
-// ACCOUNT DASHBOARD COMPONENT
-function AccountDashboard({ authUser, addresses, apiFetch, loadAddresses, showNotification }) {
-  const [orders, setOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const data = await apiFetch("./api/orders");
-        setOrders(data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoadingOrders(false);
-      }
-    };
-    fetchOrders();
-  }, []);
-
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      
-      {/* User Banner */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-orange-100 text-[#FF6A00] flex items-center justify-center font-black text-xl">
-            {authUser?.full_name?.charAt(0) || "U"}
-          </div>
-          <div>
-            <h2 className="font-black text-lg text-slate-900">{authUser?.full_name}</h2>
-            <p className="text-xs text-slate-500">{authUser?.email} | نقش: {authUser?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Orders List */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-        <h3 className="font-black text-base text-slate-900 border-b border-slate-100 pb-3">تاریخچه سفارش‌های من</h3>
-
-        {loadingOrders ? (
-          <p className="text-xs text-slate-500">در حال دریافت سفارش‌ها...</p>
-        ) : orders.length === 0 ? (
-          <p className="text-xs text-slate-500">هنوز هیچ سفارشی ثبت نکرده‌اید.</p>
-        ) : (
-          <div className="space-y-4">
-            {orders.map((o) => (
-              <div key={o.id} className="p-4 bg-[#F4F5F7] rounded-2xl border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900">شماره سفارش: {o.order_number}</span>
-                  <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
-                    وضعیت: {o.status}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-slate-600 pt-2 border-t border-slate-200">
-                  <span>مبلغ پرداختی: {formatPrice(o.total_amount)} تومان</span>
-                  <span>تاریخ: {new Date(o.created_at * 1000).toLocaleDateString("fa-IR")}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-    </div>
-  );
-}
-
-// SELLER PANEL COMPONENT
-function SellerPanel({ authUser, authStore, categories, apiFetch, showNotification }) {
+// SELLER PANEL WITH BULK IMPORT & AI ASSISTANT TOOL
+function SellerPanel({ authUser, authStore, categories, apiFetch, showNotification, onRefreshProducts }) {
   const [storeProducts, setStoreProducts] = useState([]);
-  const [ledger, setLedger] = useState({ balance: 0, pending: 0 });
-  const [loading, setLoading] = useState(true);
+  const [ledger, setLedger] = useState({ balance: 0 });
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkCsvText, setBulkCsvText] = useState("");
+  const [bulkPreview, setBulkPreview] = useState(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
-  // Add Product Form State
+  // Single Product Form
   const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState("");
+  const [sku, setSku] = useState("");
+  const [barcode, setBarcode] = useState("");
   const [price, setPrice] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
   const [stock, setStock] = useState("10");
   const [catId, setCatId] = useState(categories[0]?.id || "");
+  const [shortDesc, setShortDesc] = useState("");
   const [desc, setDesc] = useState("");
+  const [specsText, setSpecsText] = useState("پردازنده: Intel | حافظه رم: 16GB");
+  const [imageUrl, setImageUrl] = useState("https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800");
+
+  // AI Assistant State
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiTitles, setAiTitles] = useState([]);
+  const [aiAudit, setAiAudit] = useState(null);
 
   const loadSellerData = async () => {
     try {
-      setLoading(true);
       const prds = await apiFetch("./api/seller/products");
       setStoreProducts(prds || []);
       const ldg = await apiFetch("./api/seller/ledger");
-      setLedger(ldg || { balance: 0, pending: 0 });
+      setLedger(ldg || { balance: 0 });
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1953,19 +1124,117 @@ function SellerPanel({ authUser, authStore, categories, apiFetch, showNotificati
     loadSellerData();
   }, []);
 
+  // AI Assistant trigger
+  const handleAIGenerate = async (type) => {
+    try {
+      setAiLoading(true);
+      const res = await apiFetch("./api/ai/generate-product-content", {
+        method: "POST",
+        body: JSON.stringify({
+          type,
+          data: {
+            title,
+            brand,
+            category_name: categories.find((c) => c.id === catId)?.name_fa,
+            raw_text: specsText,
+            description: desc,
+            price,
+            sku,
+            images: [imageUrl]
+          }
+        })
+      });
+
+      if (type === "suggest_titles" && res.result?.titles) {
+        setAiTitles(res.result.titles);
+        showNotification("عناوین پیشنهادی هوش مصنوعی آماده گردید.");
+      } else if (type === "generate_descriptions" && res.result) {
+        if (res.result.short_description) setShortDesc(res.result.short_description);
+        if (res.result.description) setDesc(res.result.description);
+        showNotification("توضیحات کوتاه و جامع با هوش مصنوعی تولید شد.");
+      } else if (type === "extract_specs" && res.result?.specs) {
+        const specsStr = res.result.specs.map((s) => `${s.name}: ${s.value}`).join(" | ");
+        setSpecsText(specsStr);
+        showNotification("مشخصات فنی ساختاریافته استخراج گردید.");
+      } else if (type === "audit_quality" && res.result) {
+        setAiAudit(res.result);
+        showNotification(`کیفیت کالا ارزیابی شد. امتیاز: ${res.result.score}/100`);
+      }
+    } catch (err) {
+      showNotification(err.message, "error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // CSV Preview & Import
+  const handleBulkPreview = async () => {
+    try {
+      setBulkLoading(true);
+      const data = await apiFetch("./api/seller/products/bulk-preview", {
+        method: "POST",
+        body: JSON.stringify({ csv_text: bulkCsvText })
+      });
+      setBulkPreview(data);
+    } catch (err) {
+      showNotification(err.message, "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkImportCommit = async () => {
+    if (!bulkPreview || !bulkPreview.rows) return;
+    const approvedRows = bulkPreview.rows.filter((r) => r.valid);
+    if (approvedRows.length === 0) {
+      showNotification("هیچ سطر معتبری برای ثبت وجود ندارد.", "error");
+      return;
+    }
+
+    try {
+      setBulkLoading(true);
+      const res = await apiFetch("./api/seller/products/bulk-import", {
+        method: "POST",
+        body: JSON.stringify({ approved_rows: approvedRows })
+      });
+      showNotification(res.message);
+      setShowBulkModal(false);
+      setBulkCsvText("");
+      setBulkPreview(null);
+      loadSellerData();
+      if (onRefreshProducts) onRefreshProducts();
+    } catch (err) {
+      showNotification(err.message, "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     try {
+      // Parse Specs
+      const specsArr = specsText.split("|").map((pair) => {
+        const [n, v] = pair.split(":");
+        return { name: n ? n.trim() : "ویژگی", value: v ? v.trim() : "-" };
+      });
+
       await apiFetch("./api/seller/products", {
         method: "POST",
         body: JSON.stringify({
           title,
+          brand,
+          sku,
+          barcode,
           price: Number(price),
           discount_price: discountPrice ? Number(discountPrice) : null,
-          stock_quantity: Number(stock),
+          stock: Number(stock),
           category_id: catId || categories[0]?.id,
+          short_description: shortDesc,
           description: desc,
-          images_json: JSON.stringify(["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800"])
+          specs: specsArr,
+          images: [imageUrl],
+          main_image_index: 0
         })
       });
       showNotification("محصول جدید با موفقیت اضافه شد.");
@@ -1973,6 +1242,7 @@ function SellerPanel({ authUser, authStore, categories, apiFetch, showNotificati
       setPrice("");
       setDiscountPrice("");
       loadSellerData();
+      if (onRefreshProducts) onRefreshProducts();
     } catch (err) {
       showNotification(err.message, "error");
     }
@@ -1980,31 +1250,102 @@ function SellerPanel({ authUser, authStore, categories, apiFetch, showNotificati
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      
       {/* Seller Header */}
-      <div className="bg-[#1E2229] p-6 rounded-3xl text-white flex items-center justify-between">
+      <div className="bg-[#1E2229] p-6 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
           <span className="bg-emerald-500 text-white font-extrabold text-[10px] px-2.5 py-0.5 rounded uppercase">
-            Verified Supplier Seller Center
+            مرکز مدیریت کامل محصولات شاهکار
           </span>
-          <h2 className="font-black text-xl mt-1 text-white">{authStore?.store_name || "پنل مدیریت فروشگاه"}</h2>
+          <h2 className="font-black text-xl mt-1 text-white">{authStore?.store_name || "پنل فروشگاه"}</h2>
         </div>
 
-        {/* Ledger Summary */}
-        <div className="text-left bg-slate-800 p-3.5 rounded-2xl border border-slate-700">
-          <span className="text-[10px] text-slate-400 block">مانده حساب قابل تسویه:</span>
-          <span className="text-lg font-black text-[#FF6A00]">{formatPrice(ledger.balance)} تومان</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowBulkModal(true)}
+            className="px-4 py-2.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-black text-xs rounded-xl shadow-lg flex items-center gap-2 transition-all"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>ورود گروهی کالاها (CSV Import)</span>
+          </button>
+
+          <div className="text-left bg-slate-800 p-3 rounded-xl border border-slate-700">
+            <span className="text-[10px] text-slate-400 block">مانده قابل تسویه:</span>
+            <span className="text-sm font-black text-[#FF6A00]">{formatPrice(ledger.balance)} تومان</span>
+          </div>
         </div>
       </div>
 
-      {/* Add Product Form */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-        <h3 className="font-black text-base text-slate-900 border-b border-slate-100 pb-3">افزودن کالای جدید به غرفه</h3>
-        
+      {/* Add Product Form with AI Assistant */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b pb-3">
+          <h3 className="font-black text-base text-slate-900">افزودن کالای جدید با سیستم AI و فرم جامع</h3>
+          
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleAIGenerate("suggest_titles")}
+              disabled={aiLoading}
+              className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-[#FF6A00] border border-orange-200 rounded-xl text-xs font-bold flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> <span>عنوان AI</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleAIGenerate("generate_descriptions")}
+              disabled={aiLoading}
+              className="px-3 py-1.5 bg-[#1E2229] text-white hover:bg-black rounded-xl text-xs font-bold flex items-center gap-1"
+            >
+              <Cpu className="w-3.5 h-3.5 text-amber-400" /> <span>توضیحات AI</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleAIGenerate("audit_quality")}
+              disabled={aiLoading}
+              className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center gap-1"
+            >
+              <CheckSquare className="w-3.5 h-3.5 text-emerald-600" /> <span>ارزیابی AI</span>
+            </button>
+          </div>
+        </div>
+
+        {/* AI Suggested Titles Options */}
+        {aiTitles.length > 0 && (
+          <div className="p-4 bg-orange-50 rounded-2xl border border-orange-200 space-y-2">
+            <span className="text-xs font-black text-slate-900 block">عناوین پیشنهادی هوش مصنوعی (کلیک کنید تا انتخاب شود):</span>
+            <div className="space-y-1">
+              {aiTitles.map((t, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setTitle(t)}
+                  className="w-full text-right p-2 bg-white hover:bg-orange-100 rounded-xl text-xs font-bold text-slate-800 border border-slate-200"
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Quality Audit Results */}
+        {aiAudit && (
+          <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span className="font-extrabold text-amber-400">گزارش پایش کیفیت اطلاعات کالا</span>
+              <span className="bg-emerald-600 text-white font-black px-2 py-0.5 rounded">امتیاز: {aiAudit.score}/100</span>
+            </div>
+            {aiAudit.issues?.map((iss, i) => (
+              <p key={i} className="text-rose-400 flex items-center gap-1">⚠️ {iss}</p>
+            ))}
+          </div>
+        )}
+
         <form onSubmit={handleCreateProduct} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-slate-800 mb-1">عنوان کالا</label>
-            <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-xs p-2.5 border rounded-xl" />
+            <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان کامل محصول..." className="w-full text-xs p-2.5 border rounded-xl" />
           </div>
 
           <div>
@@ -2017,12 +1358,27 @@ function SellerPanel({ authUser, authStore, categories, apiFetch, showNotificati
           </div>
 
           <div>
+            <label className="block text-xs font-bold text-slate-800 mb-1">برند کالا</label>
+            <input type="text" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="مثلاً: ایسوس، سامسونگ" className="w-full text-xs p-2.5 border rounded-xl" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 mb-1">کد SKU انبار</label>
+            <input type="text" value={sku} onChange={(e) => setSku(e.target.value)} placeholder="مثلاً: ASUS-ROG-16" className="w-full text-xs p-2.5 border rounded-xl" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-800 mb-1">کد بارکد بین‌المللی</label>
+            <input type="text" value={barcode} onChange={(e) => setBarcode(e.target.value)} placeholder="کد ۱۲ رقمی بارکد" className="w-full text-xs p-2.5 border rounded-xl" />
+          </div>
+
+          <div>
             <label className="block text-xs font-bold text-slate-800 mb-1">قیمت پایه (تومان)</label>
             <input type="number" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full text-xs p-2.5 border rounded-xl" />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1">قیمت با تخفیف (اختیاری)</label>
+            <label className="block text-xs font-bold text-slate-800 mb-1">قیمت تخفیف‌دار (اختیاری)</label>
             <input type="number" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} className="w-full text-xs p-2.5 border rounded-xl" />
           </div>
 
@@ -2032,73 +1388,120 @@ function SellerPanel({ authUser, authStore, categories, apiFetch, showNotificati
           </div>
 
           <div className="md:col-span-3">
+            <label className="block text-xs font-bold text-slate-800 mb-1">مشخصات فنی (با فرمت: نام:مقدار | نام:مقدار)</label>
+            <input type="text" value={specsText} onChange={(e) => setSpecsText(e.target.value)} className="w-full text-xs p-2.5 border rounded-xl" />
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="block text-xs font-bold text-slate-800 mb-1">توضیحات کوتاه مارکتینگ</label>
+            <input type="text" value={shortDesc} onChange={(e) => setShortDesc(e.target.value)} placeholder="خلاصه ۲ خطی محصول..." className="w-full text-xs p-2.5 border rounded-xl" />
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="block text-xs font-bold text-slate-800 mb-1">توضیحات جامع و کامل کالا</label>
+            <textarea rows={3} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="شرح کامل کاربرد و مزایا..." className="w-full text-xs p-2.5 border rounded-xl"></textarea>
+          </div>
+
+          <div className="md:col-span-3">
             <button type="submit" className="px-6 py-3 bg-[#FF6A00] text-white font-extrabold text-xs rounded-xl shadow-md">
-              ثبت محصول جدید
+              ثبت نهایی کالا در شاهکار
             </button>
           </div>
         </form>
       </div>
 
-      {/* Existing Products */}
+      {/* Existing Products List */}
       <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-        <h3 className="font-black text-base text-slate-900 border-b border-slate-100 pb-3">محصولات موجود غرفه شما ({toFaDigits(storeProducts.length)})</h3>
+        <h3 className="font-black text-base text-slate-900 border-b border-slate-100 pb-3">لیست کلیه محصولات انبار شما ({toFaDigits(storeProducts.length)})</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {storeProducts.map((p) => (
-            <div key={p.id} className="p-4 bg-[#F4F5F7] rounded-2xl border border-slate-200 flex items-center justify-between">
-              <div>
+            <div key={p.id} className="p-4 bg-[#F4F5F7] rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
                 <h4 className="font-bold text-xs text-slate-900">{p.title}</h4>
-                <p className="text-[11px] text-slate-500 mt-1">قیمت: {formatPrice(p.price)} تومان | موجودی: {toFaDigits(p.stock_quantity)}</p>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">{p.status}</span>
               </div>
+              <p className="text-[11px] text-slate-500">برند: {p.brand || "-"} | SKU: {p.sku || "-"}</p>
+              <p className="text-[11px] text-slate-600 font-bold">قیمت: {formatPrice(p.price)} تومان | موجودی: {toFaDigits(p.stock ?? 0)} عدد</p>
             </div>
           ))}
         </div>
       </div>
 
-    </div>
-  );
-}
+      {/* BULK CSV IMPORT MODAL */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
+            <div className="bg-[#1E2229] p-5 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-[#FF6A00]" />
+                <h3 className="font-extrabold text-base">ورود گروهی کالاها از فایل CSV</h3>
+              </div>
+              <button onClick={() => setShowBulkModal(false)} className="p-1.5 text-slate-400 hover:text-white rounded-lg">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-// ADMIN PANEL COMPONENT
-function AdminPanel({ apiFetch, showNotification, onReloadSystem }) {
-  const [stats, setStats] = useState(null);
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-700">ابتدا ساختار نمونه فایل CSV را دریافت نمائید:</span>
+                <a
+                  href="./api/seller/products/sample-csv"
+                  download
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" /> <span>دانلود قالب نمونه CSV</span>
+                </a>
+              </div>
 
-  useEffect(() => {
-    const loadAdminStats = async () => {
-      try {
-        const data = await apiFetch("./api/admin/stats");
-        setStats(data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    loadAdminStats();
-  }, []);
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">متن یا محتوای فایل CSV را جای‌گذاری کنید:</label>
+                <textarea
+                  rows={5}
+                  value={bulkCsvText}
+                  onChange={(e) => setBulkCsvText(e.target.value)}
+                  placeholder={`title,category_slug,price,discount_price,stock,brand,sku\n"گوشی آیفون 15","electronics",79000000,76500000,10,"اپل","IPH15-256"`}
+                  className="w-full text-xs font-mono p-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+                ></textarea>
+              </div>
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      <div className="bg-[#1E2229] p-6 rounded-3xl text-white">
-        <h2 className="font-black text-xl text-white">داشبورد مدیریت ارشد علی‌بابا بازارگاه</h2>
-        <p className="text-xs text-slate-400 mt-1">پایش کل گردش مالی، فروشگاه‌ها و سفارشات بازارگاه</p>
-      </div>
+              <button
+                onClick={handleBulkPreview}
+                disabled={bulkLoading || !bulkCsvText.trim()}
+                className="px-5 py-2.5 bg-[#1E2229] text-white font-bold text-xs rounded-xl hover:bg-black transition-colors"
+              >
+                {bulkLoading ? "در حال بررسی..." : "اعتبارسنجی و پیش‌نمایش سطور"}
+              </button>
 
-      {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 font-bold block">کل فروش بازارگاه (GMV):</span>
-            <span className="text-xl font-black text-[#FF6A00] mt-1 block">{formatPrice(stats.gmv)} تومان</span>
-          </div>
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 font-bold block">درآمد کارمزد بازارگاه (کمیسیون ۵٪):</span>
-            <span className="text-xl font-black text-emerald-600 mt-1 block">{formatPrice(stats.platformRevenue)} تومان</span>
-          </div>
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 font-bold block">تعداد سفارش‌ها:</span>
-            <span className="text-xl font-black text-slate-900 mt-1 block">{toFaDigits(stats.totalOrders)} عدد</span>
-          </div>
-          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-500 font-bold block">فروشگاه‌های فعال:</span>
-            <span className="text-xl font-black text-blue-600 mt-1 block">{toFaDigits(stats.totalStores)} غرفه</span>
+              {bulkPreview && (
+                <div className="space-y-3 pt-3 border-t">
+                  <div className="flex items-center gap-4 text-xs font-bold">
+                    <span className="text-slate-900">کل سطور: {bulkPreview.total_rows}</span>
+                    <span className="text-emerald-600">سطور معتبر: {bulkPreview.valid_rows_count}</span>
+                    <span className="text-rose-600">سطور دارای خطا: {bulkPreview.invalid_rows_count}</span>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto space-y-2 border rounded-xl p-2 text-xs">
+                    {bulkPreview.rows?.map((r, idx) => (
+                      <div key={idx} className={`p-2 rounded-lg border ${r.valid ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
+                        <span className="font-bold block">سطر {r.row_num}: {r.product_data?.title}</span>
+                        {r.errors?.map((err, eIdx) => (
+                          <span key={eIdx} className="text-rose-600 text-[11px] block">{err}</span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleBulkImportCommit}
+                    disabled={bulkLoading || bulkPreview.valid_rows_count === 0}
+                    className="w-full py-3 bg-[#FF6A00] text-white font-black text-xs rounded-xl shadow-lg"
+                  >
+                    ثبت نهایی {bulkPreview.valid_rows_count} کالای معتبر در انبار
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -2106,7 +1509,115 @@ function AdminPanel({ apiFetch, showNotification, onReloadSystem }) {
   );
 }
 
-// AUTHENTICATION MODAL COMPONENT
+// ADMIN PANEL WITH APPROVAL WORKFLOW QUEUE
+function AdminPanel({ apiFetch, showNotification, onReloadSystem }) {
+  const [stats, setStats] = useState(null);
+  const [pendingProducts, setPendingProducts] = useState([]);
+
+  const loadAdminData = async () => {
+    try {
+      const data = await apiFetch("./api/admin/stats");
+      setStats(data);
+      const pending = await apiFetch("./api/admin/products/pending");
+      setPendingProducts(pending || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    loadAdminData();
+  }, []);
+
+  const handleApproveProduct = async (id) => {
+    try {
+      await apiFetch(`./api/admin/products/${id}/approve`, { method: "PUT" });
+      showNotification("محصول با موفقیت تأیید گردید.");
+      loadAdminData();
+      if (onReloadSystem) onReloadSystem();
+    } catch (err) {
+      showNotification(err.message, "error");
+    }
+  };
+
+  const handleRejectProduct = async (id) => {
+    try {
+      await apiFetch(`./api/admin/products/${id}/reject`, {
+        method: "PUT",
+        body: JSON.stringify({ reason: "عدم تطابق با استانداردهای انتشار کالا" })
+      });
+      showNotification("محصول رد گردید.");
+      loadAdminData();
+      if (onReloadSystem) onReloadSystem();
+    } catch (err) {
+      showNotification(err.message, "error");
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <div className="bg-[#1E2229] p-6 rounded-3xl text-white">
+        <h2 className="font-black text-xl text-white">داشبورد مدیریت ارشد شاهکار</h2>
+        <p className="text-xs text-slate-400 mt-1">پایش کامل امور مالی، تأیید کالاها و مدیریت کاربران</p>
+      </div>
+
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[11px] text-slate-500 font-bold block">کل فروش (GMV):</span>
+            <span className="text-lg font-black text-[#FF6A00] mt-1 block">{formatPrice(stats.totalGMV ?? 0)} تومان</span>
+          </div>
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[11px] text-slate-500 font-bold block">سهم کمیسیون ۵٪:</span>
+            <span className="text-lg font-black text-emerald-600 mt-1 block">{formatPrice(stats.totalCommission ?? 0)} تومان</span>
+          </div>
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[11px] text-slate-500 font-bold block">تعداد سفارشات:</span>
+            <span className="text-lg font-black text-slate-900 mt-1 block">{toFaDigits(stats.orderCount ?? 0)}</span>
+          </div>
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[11px] text-slate-500 font-bold block">غرفه‌ها:</span>
+            <span className="text-lg font-black text-blue-600 mt-1 block">{toFaDigits(stats.storeCount ?? 0)}</span>
+          </div>
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[11px] text-slate-500 font-bold block">کالاهای منتشرشده:</span>
+            <span className="text-lg font-black text-indigo-600 mt-1 block">{toFaDigits(stats.productCount ?? 0)}</span>
+          </div>
+          <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-[11px] text-slate-500 font-bold block">در انتظار بررسی:</span>
+            <span className="text-lg font-black text-rose-600 mt-1 block">{toFaDigits(stats.pendingProductsCount ?? 0)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Approval Queue */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <h3 className="font-black text-base text-slate-900 border-b pb-3">صف بررسی و انتشار کالاها ({toFaDigits(pendingProducts.length)})</h3>
+
+        {pendingProducts.length === 0 ? (
+          <p className="text-xs text-slate-500">هیچ کالایی در صف بررسی وجود ندارد.</p>
+        ) : (
+          <div className="space-y-3">
+            {pendingProducts.map((p) => (
+              <div key={p.id} className="p-4 bg-slate-50 rounded-2xl border flex items-center justify-between">
+                <div>
+                  <h4 className="font-extrabold text-xs text-slate-900">{p.title}</h4>
+                  <p className="text-[11px] text-slate-500">فروشگاه: {p.store_name} | قیمت: {formatPrice(p.price)} تومان</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleApproveProduct(p.id)} className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl">تأیید و انتشار</button>
+                  <button onClick={() => handleRejectProduct(p.id)} className="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-xl">رد محصول</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// AUTH MODAL
 function AuthModal({ mode, setMode, onClose, onLogin, apiFetch, showNotification, setAuthToken, setAuthUser, setAuthStore }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -2132,7 +1643,7 @@ function AuthModal({ mode, setMode, onClose, onLogin, apiFetch, showNotification
       setAuthUser(res.user);
       setAuthStore(res.store);
       onClose();
-      showNotification(`حساب کاربری با موفقیت ساخته شد! خوش آمدید ${res.user.full_name}`);
+      showNotification(`حساب ساخته شد! خوش آمدید ${res.user.full_name}`);
     } catch (err) {
       showNotification(err.message, "error");
     }
@@ -2141,11 +1652,9 @@ function AuthModal({ mode, setMode, onClose, onLogin, apiFetch, showNotification
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200">
-        
         <div className="bg-[#1E2229] p-6 text-white text-center relative border-b border-slate-800">
           <div className="w-12 h-12 rounded-2xl bg-[#FF6A00] flex items-center justify-center font-black text-2xl mx-auto mb-2 text-white">a</div>
-          <h3 className="font-black text-lg">{mode === "login" ? "ورود به علی‌بابا بازارگاه" : "ثبت‌نام حساب جدید"}</h3>
-          <p className="text-xs text-slate-400 mt-1">پلتفرم بین‌المللی تجارت و خریدهای عمومی و عمده</p>
+          <h3 className="font-black text-lg">{mode === "login" ? "ورود به شاهکار" : "ثبت‌نام حساب جدید"}</h3>
           <button onClick={onClose} className="absolute top-4 left-4 p-1.5 text-slate-400 hover:text-white rounded-lg">
             <X className="w-5 h-5" />
           </button>
@@ -2153,133 +1662,71 @@ function AuthModal({ mode, setMode, onClose, onLogin, apiFetch, showNotification
 
         <div className="p-6 space-y-4">
           {mode === "login" ? (
-            <form onSubmit={(e) => onLogin(e, email, password)} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">ایمیل یا نام کاربری</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@bazargah.ir"
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">رمز عبور</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold rounded-xl text-xs shadow-lg shadow-orange-500/20 transition-all"
-              >
-                ورود به حساب کاربری
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">نام و نام خانوادگی کامل</label>
-                <input
-                  type="text"
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="محمد رضایی"
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">آدرس ایمیل معتبر</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="newuser@bazargah.ir"
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">رمز عبور امن</label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">نوع حساب کاربری</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                >
-                  <option value="BUYER">خریدار کالا (Buyer)</option>
-                  <option value="SELLER">فروشنده و تامین‌کننده (Verified Supplier)</option>
-                </select>
-              </div>
-
-              {role === "SELLER" && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1">نام تجاری فروشگاه / کارخانه</label>
-                  <input
-                    type="text"
-                    required
-                    value={storeName}
-                    onChange={(e) => setStoreName(e.target.value)}
-                    placeholder="فروشگاه نوین تجارت"
-                    className="w-full text-xs p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#FF6A00] focus:outline-none"
-                  />
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                <span className="text-[11px] font-extrabold text-slate-700 block text-center">ورود سریع آزمایشی با یک کلیک:</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={(e) => onLogin(e, "admin@bazargah.ir", "admin123")}
+                    className="py-2 px-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl text-[10px] font-bold border border-amber-300"
+                  >
+                    👑 مدیر کل
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => onLogin(e, "tech@bazargah.ir", "seller123")}
+                    className="py-2 px-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-xl text-[10px] font-bold border border-emerald-300"
+                  >
+                    🏬 فروشنده
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => onLogin(e, "user@bazargah.ir", "user123")}
+                    className="py-2 px-1 bg-blue-100 hover:bg-blue-200 text-blue-900 rounded-xl text-[10px] font-bold border border-blue-300"
+                  >
+                    🛒 خریدار
+                  </button>
                 </div>
-              )}
+              </div>
 
-              <button
-                type="submit"
-                className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#E05900] text-white font-extrabold rounded-xl text-xs shadow-lg shadow-orange-500/20 transition-all"
-              >
-                ثبت‌نام و ایجاد حساب
-              </button>
+              <form onSubmit={(e) => onLogin(e, email, password)} className="space-y-3">
+                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="پست الکترونیک..." className="w-full text-xs p-3 rounded-xl border" />
+                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="رمز عبور..." className="w-full text-xs p-3 rounded-xl border" />
+                <button type="submit" className="w-full py-3 bg-[#FF6A00] text-white font-extrabold rounded-xl text-xs shadow-lg">ورود به حساب</button>
+              </form>
+            </div>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-3">
+              <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="نام و نام خانوادگی..." className="w-full text-xs p-3 rounded-xl border" />
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="پست الکترونیک..." className="w-full text-xs p-3 rounded-xl border" />
+              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="رمز عبور..." className="w-full text-xs p-3 rounded-xl border" />
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full text-xs p-3 rounded-xl border">
+                <option value="BUYER">حساب خریدار عادی</option>
+                <option value="SELLER">حساب فروشنده (غرفه‌دار)</option>
+              </select>
+              {role === "SELLER" && (
+                <input type="text" required value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="نام فروشگاه یا برند شما..." className="w-full text-xs p-3 rounded-xl border" />
+              )}
+              <button type="submit" className="w-full py-3 bg-[#FF6A00] text-white font-extrabold rounded-xl text-xs shadow-lg">ایجاد حساب کاربری</button>
             </form>
           )}
 
-          <div className="pt-3 border-t border-slate-100 text-center text-xs">
-            {mode === "login" ? (
-              <p className="text-slate-600">
-                حساب کاربری ندارید؟{" "}
-                <button onClick={() => setMode("register")} className="text-[#FF6A00] font-extrabold hover:underline">
-                  ثبت‌نام کنید
-                </button>
-              </p>
-            ) : (
-              <p className="text-slate-600">
-                قبلاً ثبت‌نام کرده‌اید؟{" "}
-                <button onClick={() => setMode("login")} className="text-[#FF6A00] font-extrabold hover:underline">
-                  وارد شوید
-                </button>
-              </p>
-            )}
+          <div className="text-center pt-2">
+            <button
+              onClick={() => setMode(mode === "login" ? "register" : "login")}
+              className="text-xs text-[#FF6A00] font-bold hover:underline"
+            >
+              {mode === "login" ? "حساب کاربری ندارید؟ ثبت‌نام کنید" : "قبلاً ثبت‌نام کرده‌اید؟ وارد شوید"}
+            </button>
           </div>
         </div>
-
       </div>
     </div>
   );
 }
 
-// Render React App
+// Mount App
 const container = document.getElementById("root");
 if (container) {
   const root = createRoot(container);
