@@ -107,8 +107,54 @@ export function App() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
-  // Toast Notification State
-  const [toast, setToast] = useState(null);
+  // AI Shopping Assistant Chat State
+  const [showAssistantModal, setShowAssistantModal] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState([
+    {
+      sender: "bot",
+      text: "سلام! من دستیار هوشمند خرید بازارگاه شاهکار هستم. چطور می‌توانم در انتخاب و خرید کالا به شما کمک کنم؟",
+      recommendations: [],
+      follow_ups: ["به دنبال چه محصولی می‌گردید؟", "ارزان‌ترین گوشی‌های هوشمند بازار کدامند؟"]
+    }
+  ]);
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantLoading, setAssistantLoading] = useState(false);
+
+  // Advanced Filters State for Catalog
+  const [selectedBrandFilter, setSelectedBrandFilter] = useState("");
+  const [inStockFilter, setInStockFilter] = useState(false);
+  const [minPriceFilter, setMinPriceFilter] = useState("");
+  const [maxPriceFilter, setMaxPriceFilter] = useState("");
+
+  const handleSendAssistantMessage = async (msgToSend) => {
+    const text = msgToSend || assistantInput;
+    if (!text || !text.trim()) return;
+
+    const userMsg = { sender: "user", text };
+    setAssistantMessages((prev) => [...prev, userMsg]);
+    setAssistantInput("");
+    setAssistantLoading(true);
+
+    try {
+      const res = await apiFetch("./api/assistant/chat", {
+        method: "POST",
+        body: JSON.stringify({ message: text, history: assistantMessages })
+      });
+
+      const botMsg = {
+        sender: "bot",
+        text: res.reply,
+        recommendations: res.recommendations || [],
+        follow_ups: res.follow_ups || []
+      };
+
+      setAssistantMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      showNotification(err.message, "error");
+    } finally {
+      setAssistantLoading(false);
+    }
+  };
 
   // System Tests Modal State
   const [showTestsModal, setShowTestsModal] = useState(false);
@@ -325,8 +371,26 @@ export function App() {
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q) || p.brand?.toLowerCase().includes(q));
+      list = list.filter((p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.brand?.toLowerCase().includes(q) ||
+        p.sku?.toLowerCase().includes(q)
+      );
     }
+    if (selectedBrandFilter) {
+      list = list.filter((p) => p.brand?.toLowerCase().includes(selectedBrandFilter.toLowerCase()));
+    }
+    if (inStockFilter) {
+      list = list.filter((p) => (p.stock ?? 0) > 0);
+    }
+    if (minPriceFilter) {
+      list = list.filter((p) => (p.discount_price || p.price) >= parseFloat(minPriceFilter));
+    }
+    if (maxPriceFilter) {
+      list = list.filter((p) => (p.discount_price || p.price) <= parseFloat(maxPriceFilter));
+    }
+
     if (priceSort === "price_asc") {
       list.sort((a, b) => (a.discount_price || a.price) - (b.discount_price || b.price));
     } else if (priceSort === "price_desc") {
@@ -335,7 +399,7 @@ export function App() {
       list.sort((a, b) => b.created_at - a.created_at);
     }
     return list;
-  }, [products, selectedCategory, searchScopeCategory, searchQuery, priceSort]);
+  }, [products, selectedCategory, searchScopeCategory, searchQuery, selectedBrandFilter, inStockFilter, minPriceFilter, maxPriceFilter, priceSort]);
 
   const totalCartCount = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
