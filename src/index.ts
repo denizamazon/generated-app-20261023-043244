@@ -2582,15 +2582,6 @@ export class App extends DurableObject {
       return c.json({ ok: true, refund_amount: refundVal, message: "تراکنش استرداد وجه با موفقیت در دفترکل مالی ثبت شد." });
     });
 
-      return c.json({
-        ok: true,
-        orderId,
-        orderNumber,
-        grandTotal,
-        message: "پرداخت آزمایشی با موفقیت انجام شد و سفارش شما ثبت گردید."
-      });
-    });
-
     // ===================================
     // CUSTOMER ORDERS
     // ===================================
