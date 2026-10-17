@@ -2789,11 +2789,6 @@ export class App extends DurableObject {
   }
 }
 
-export default {
-  async fetch(request: Request, env: { APP: DurableObjectNamespace }, ctx: ExecutionContext): Promise<Response> {
-    const id = env.APP.idFromName("global_bazargah_v1");
-    const stub = env.APP.get(id);
-    return stub.fetch(request);
-  }
-};
+export default App;
+
 
