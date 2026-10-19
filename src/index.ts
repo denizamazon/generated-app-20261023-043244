@@ -1459,6 +1459,14 @@ export class App extends DurableObject {
       return c.json({ ...product, reviews });
     });
 
+    app.get("/api/products/:id/reviews", (c) => {
+      const productId = c.req.param("id");
+      const reviews = this.ctx.storage.sql
+        .exec("SELECT id, user_name, rating, comment, created_at FROM reviews WHERE product_id = ? AND status = 'APPROVED' ORDER BY created_at DESC", productId)
+        .toArray();
+      return c.json(reviews);
+    });
+
     app.post("/api/products/:id/reviews", async (c) => {
       const user = getAuthUser(c);
       if (!user) {
@@ -1921,7 +1929,7 @@ export class App extends DurableObject {
     // Product History Endpoint
     app.get("/api/products/:id/history", (c) => {
       const user = getAuthUser(c);
-      if (!user) return c.json({ error: "احراز هویت نشدید." }, 401);
+      if (!user) return c.json([]);
 
       const prdId = c.req.param("id");
       const history = this.ctx.storage.sql
