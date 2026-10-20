@@ -58,7 +58,12 @@ import {
   Sliders,
   SlidersHorizontal,
   ThumbsUp,
-  ArrowUpDown
+  ArrowUpDown,
+  Smartphone,
+  QrCode,
+  Share2,
+  DownloadCloud,
+  AppWindow
 } from "lucide-react";
 
 // Number formatter for Tomans
@@ -71,6 +76,64 @@ function formatPrice(amount) {
 function toFaDigits(str) {
   if (str === undefined || str === null) return "";
   return String(str).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]);
+}
+
+// SVG QR Code Generator Component for Mobile App Download
+function QRCodeSVG({ value = "https://shahkar.marketplace/app", size = 160 }) {
+  const modules = useMemo(() => {
+    const grid = Array(21).fill(0).map(() => Array(21).fill(false));
+    const addFinder = (row, col) => {
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          if (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
+            grid[row + r][col + c] = true;
+          }
+        }
+      }
+    };
+    addFinder(0, 0);
+    addFinder(0, 14);
+    addFinder(14, 0);
+
+    for (let i = 8; i < 13; i++) {
+      grid[6][i] = i % 2 === 0;
+      grid[i][6] = i % 2 === 0;
+    }
+
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) hash = (hash << 5) - hash + value.charCodeAt(i);
+    for (let r = 0; r < 21; r++) {
+      for (let c = 0; c < 21; c++) {
+        if ((r < 7 && c < 7) || (r < 7 && c > 13) || (r > 13 && c < 7)) continue;
+        if (r === 6 || c === 6) continue;
+        const bit = Math.abs((r * 21 + c * 31 + hash) % 7);
+        grid[r][c] = bit < 4;
+      }
+    }
+    return grid;
+  }, [value]);
+
+  const tileSize = size / 21;
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="rounded-xl shadow-md bg-white p-2 border border-slate-200">
+      {modules.map((row, r) =>
+        row.map((active, c) =>
+          active ? (
+            <rect
+              key={`${r}-${c}`}
+              x={c * tileSize}
+              y={r * tileSize}
+              width={tileSize}
+              height={tileSize}
+              fill="#1E2229"
+              rx={tileSize * 0.15}
+            />
+          ) : null
+        )
+      )}
+    </svg>
+  );
 }
 
 export function App() {

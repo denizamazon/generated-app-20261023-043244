@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-  <title>بازارگاه اینترنتی بین‌المللی | پلتفرم چندفروشنده‌ای</title>
+  <meta name="theme-color" content="#FF6A00" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="شاهکار" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081559.png" />
+  <title>بازارگاه اینترنتی بین‌المللی | پلتفرم چندفروشنده‌ای شاهکار</title>
   
   <!-- Vazirmatn Persian Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -98,6 +104,19 @@
 </head>
 <body class="h-full bg-slate-50 text-slate-800 antialiased selection:bg-primary-500 selection:text-white">
   <div id="root" class="min-h-full flex flex-col"></div>
+
+  <!-- Service Worker Registration for PWA Mobile App -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(registration) {
+          console.log('Shahkar PWA ServiceWorker registered with scope:', registration.scope);
+        }, function(err) {
+          console.log('Shahkar PWA ServiceWorker registration failed:', err);
+        });
+      });
+    }
+  </script>
 
   <!-- React Main Script -->
   <script type="text/babel" data-type="module" data-presets="react" src="./app.jsx"></script>

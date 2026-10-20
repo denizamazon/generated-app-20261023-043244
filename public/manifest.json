@@ -1,0 +1,58 @@
+{
+  "short_name": "شاهکار",
+  "name": "بازارگاه اینترنتی بین‌المللی چندفروشنده‌ای شاهکار",
+  "description": "سامانه هوشمند تجارت بین‌المللی، مدیریت محصولات و بازارگاه چندفروشنده‌ای",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081559.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./",
+  "background_color": "#1E2229",
+  "theme_color": "#FF6A00",
+  "display": "standalone",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "fa-IR",
+  "categories": ["shopping", "business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "صفحه اصلی بازارگاه",
+      "short_name": "خانه",
+      "description": "مشاهده محصولات ویژه و پرفروش",
+      "url": "./?tab=home"
+    },
+    {
+      "name": "سبد خرید آنلاین",
+      "short_name": "سبد خرید",
+      "description": "مشاهده اقلام سبد خرید",
+      "url": "./?tab=cart"
+    },
+    {
+      "name": "دستیار هوشمند خرید AI",
+      "short_name": "دستیار AI",
+      "description": "چت با هوش مصنوعی برای مشاوره خرید",
+      "url": "./?tab=ai"
+    },
+    {
+      "name": "مرکز مدیریت غرفه‌داران",
+      "short_name": "پنل غرفه",
+      "description": "مدیریت محصولات و سفارش‌های فروشگاه",
+      "url": "./?tab=seller"
+    }
+  ]
+}
