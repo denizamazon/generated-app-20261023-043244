@@ -136,6 +136,338 @@ function QRCodeSVG({ value = "https://shahkar.marketplace/app", size = 160 }) {
   );
 }
 
+// 6 Languages metadata for Global Marketplace
+const SUPPORTED_LANGUAGES = [
+  { code: "fa", name: "Persian", nativeName: "فارسی", flag: "🇮🇷", dir: "rtl", currency: "IRT", symbol: "تومان", rate: 1 },
+  { code: "en", name: "English", nativeName: "English", flag: "🇺🇸", dir: "ltr", currency: "USD", symbol: "$", rate: 0.000016 },
+  { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦", dir: "rtl", currency: "AED", symbol: "د.إ", rate: 0.000059 },
+  { code: "tr", name: "Turkish", nativeName: "Türkçe", flag: "🇹🇷", dir: "ltr", currency: "TRY", symbol: "₺", rate: 0.00052 },
+  { code: "ru", name: "Russian", nativeName: "Русский", flag: "🇷🇺", dir: "ltr", currency: "RUB", symbol: "₽", rate: 0.0015 },
+  { code: "zh", name: "Chinese", nativeName: "中文", flag: "🇨🇳", dir: "ltr", currency: "CNY", symbol: "¥", rate: 0.00011 }
+];
+
+const I18N_DICTIONARIES = {
+  fa: {
+    brand_name: "شاهکار",
+    brand_badge: "بازارگاه بین‌المللی",
+    download_app: "دانلود اپلیکیشن",
+    search_placeholder: "نام کالا، برند، کد SKU یا مشخصات فنی...",
+    all_categories: "همه دسته‌ها",
+    search_btn: "جستجو",
+    cart: "سبد خرید",
+    account: "حساب کاربری",
+    seller_panel: "پنل فروشنده",
+    admin_panel: "پنل مدیریت",
+    rfq_btn: "استعلام قیمت عمده (RFQ)",
+    health_check: "تست و پایش سلامت سیستم (۲۱ آزمون)",
+    home: "صفحه اصلی",
+    products: "کالاهـا",
+    best_sellers: "پرفروش‌ترین‌ها",
+    special_offers: "تخفیف‌های ویژه",
+    new_arrivals: "جدیدترین‌ها",
+    add_to_cart: "افزودن به سبد خرید",
+    buy_now: "خرید مستقیم",
+    price: "قیمت",
+    out_of_stock: "ناموجود",
+    in_stock: "موجود در انبار",
+    guarantee: "ضمانت اصالت و سلامت کالا",
+    express_shipping: "ارسال سریع بین‌المللی",
+    support_247: "پشتیبانی ۲۴ ساعته",
+    select_language: "انتخاب زبان و ارز نمایش",
+    current_lang: "فارسی (RTL)",
+    active_language: "زبان فعال",
+    ai_assistant: "دستیار هوشمند AI",
+    translate_tool: "ترجمه هوشمند ۶ زبانه",
+    ai_audit: "پایش کیفیت هوشمند",
+    csv_import: "ورود گروهی CSV"
+  },
+  en: {
+    brand_name: "Shahkar",
+    brand_badge: "Global Marketplace",
+    download_app: "Download App",
+    search_placeholder: "Search products, brands, SKU or specs...",
+    all_categories: "All Categories",
+    search_btn: "Search",
+    cart: "Shopping Cart",
+    account: "Account",
+    seller_panel: "Seller Portal",
+    admin_panel: "Admin Portal",
+    rfq_btn: "Wholesale RFQ",
+    health_check: "System Health Audit (21 Tests)",
+    home: "Home",
+    products: "Products",
+    best_sellers: "Best Sellers",
+    special_offers: "Special Offers",
+    new_arrivals: "New Arrivals",
+    add_to_cart: "Add to Cart",
+    buy_now: "Buy Now",
+    price: "Price",
+    out_of_stock: "Out of Stock",
+    in_stock: "In Stock",
+    guarantee: "Authenticity & Quality Guarantee",
+    express_shipping: "Express Global Delivery",
+    support_247: "24/7 Support",
+    select_language: "Select Language & Currency",
+    current_lang: "English (LTR)",
+    active_language: "Active Language",
+    ai_assistant: "AI Smart Assistant",
+    translate_tool: "6-Language AI Translator",
+    ai_audit: "AI Quality Audit",
+    csv_import: "CSV Bulk Import"
+  },
+  ar: {
+    brand_name: "شاهكار",
+    brand_badge: "السوق العالمي",
+    download_app: "تحميل التطبيق",
+    search_placeholder: "ابحث عن المنتجات والعلامات التجارية...",
+    all_categories: "جميع الفئات",
+    search_btn: "بحث",
+    cart: "عربة التسوق",
+    account: "حسابي",
+    seller_panel: "بوابة البائع",
+    admin_panel: "بوابة الإدارة",
+    rfq_btn: "طلب أسعار بالجملة (RFQ)",
+    health_check: "فحص سلامة النظام (۲۱ اختباراً)",
+    home: "الرئيسية",
+    products: "المنتجات",
+    best_sellers: "الأكثر مبيعاً",
+    special_offers: "العروض الخاصة",
+    new_arrivals: "وصل حديثاً",
+    add_to_cart: "إضافة للسلة",
+    buy_now: "شراء الآن",
+    price: "السعر",
+    out_of_stock: "نفدت الكمية",
+    in_stock: "متوفر في المخزن",
+    guarantee: "ضمان الجودة والأصالة",
+    express_shipping: "شحن عالمي سريع",
+    support_247: "دعم على مدار الساعة",
+    select_language: "اختر اللغة والعملة",
+    current_lang: "العربية (RTL)",
+    active_language: "اللغة الحالية",
+    ai_assistant: "المساعد الذكي AI",
+    translate_tool: "ترجمه ذكية بـ ٦ لغات",
+    ai_audit: "تدقيق الجودة الذكي",
+    csv_import: "استيراد CSV جماعي"
+  },
+  tr: {
+    brand_name: "Shahkar",
+    brand_badge: "Küresel Pazaryeri",
+    download_app: "Uygulamayı İndir",
+    search_placeholder: "Ürün, marka, SKU veya teknik özellik ara...",
+    all_categories: "Tüm Kategoriler",
+    search_btn: "Ara",
+    cart: "Alışveriş Sepeti",
+    account: "Hesabım",
+    seller_panel: "Satıcı Portalı",
+    admin_panel: "Yönetici Portalı",
+    rfq_btn: "Toptan Fiyat Teklifi (RFQ)",
+    health_check: "Sistem Sağlık Denetimi (21 Test)",
+    home: "Anasayfa",
+    products: "Ürünler",
+    best_sellers: "Çok Satanlar",
+    special_offers: "Özel Fırsatlar",
+    new_arrivals: "Yeni Gelenler",
+    add_to_cart: "Sepete Ekle",
+    buy_now: "Hemen Satın Al",
+    price: "Fiyat",
+    out_of_stock: "Stokta Yok",
+    in_stock: "Stokta Var",
+    guarantee: "Orijinal Ürün & Kalite Garantisi",
+    express_shipping: "Hızlı Uluslararası Teslimat",
+    support_247: "7/24 Canlı Destek",
+    select_language: "Dil ve Para Birimi Seçin",
+    current_lang: "Türkçe (LTR)",
+    active_language: "Aktif Dil",
+    ai_assistant: "Yapay Zeka Asistanı",
+    translate_tool: "6 Dilde Çeviri Aracı",
+    ai_audit: "AI Kalite Denetimi",
+    csv_import: "Toplu CSV İçe Aktarma"
+  },
+  ru: {
+    brand_name: "Шахкар",
+    brand_badge: "Глобальный маркетплейс",
+    download_app: "Скачать прил.",
+    search_placeholder: "Поиск товаров, брендов, SKU...",
+    all_categories: "Все категории",
+    search_btn: "Поиск",
+    cart: "Корзина",
+    account: "Кабинет",
+    seller_panel: "Панель продавца",
+    admin_panel: "Панель админа",
+    rfq_btn: "Запрос оптовых цен (RFQ)",
+    health_check: "Проверка системы (21 тест)",
+    home: "Главная",
+    products: "Товары",
+    best_sellers: "Хиты продаж",
+    special_offers: "Специальные скидки",
+    new_arrivals: "Новинки",
+    add_to_cart: "В корзину",
+    buy_now: "Купить сейчас",
+    price: "Цена",
+    out_of_stock: "Нет в наличии",
+    in_stock: "В наличии",
+    guarantee: "Гарантия оригинальности товара",
+    express_shipping: "Экспресс-доставка по миру",
+    support_247: "Поддержка 24/7",
+    select_language: "Выбор языка и валюты",
+    current_lang: "Русский (LTR)",
+    active_language: "Активный язык",
+    ai_assistant: "ИИ-помощник",
+    translate_tool: "Перевод на 6 языков",
+    ai_audit: "ИИ-аудит качества",
+    csv_import: "Массовый импорт CSV"
+  },
+  zh: {
+    brand_name: "Shahkar",
+    brand_badge: "全球跨境商城",
+    download_app: "下载应用",
+    search_placeholder: "搜索商品、品牌、SKU或规格...",
+    all_categories: "全部分类",
+    search_btn: "搜索",
+    cart: "购物车",
+    account: "个人中心",
+    seller_panel: "卖家中心",
+    admin_panel: "管理后台",
+    rfq_btn: "大额批发询价 (RFQ)",
+    health_check: "系统健康监测 (21项测试)",
+    home: "首页",
+    products: "全部商品",
+    best_sellers: "热销榜单",
+    special_offers: "限时特惠",
+    new_arrivals: "新品上市",
+    add_to_cart: "加入购物车",
+    buy_now: "立即购买",
+    price: "价格",
+    out_of_stock: "暂时缺货",
+    in_stock: "现货供应",
+    guarantee: "正品保障・品质严选",
+    express_shipping: "全球极速物流",
+    support_247: "24/7 专人客服",
+    select_language: "选择语言与显示货币",
+    current_lang: "中文 (LTR)",
+    active_language: "当前语言",
+    ai_assistant: "AI 智能助手",
+    translate_tool: "六国语言 AI 同步翻译",
+    ai_audit: "AI 商品质量审核",
+    csv_import: "CSV 批量导入"
+  }
+};
+
+function formatPriceWithLang(amountInIRT, langCode = "fa") {
+  if (amountInIRT === undefined || amountInIRT === null) return "0";
+  const langMeta = SUPPORTED_LANGUAGES.find((l) => l.code === langCode) || SUPPORTED_LANGUAGES[0];
+
+  if (langCode === "fa") {
+    return new Intl.NumberFormat("fa-IR").format(amountInIRT) + " تومان";
+  }
+
+  const converted = amountInIRT * langMeta.rate;
+
+  if (langCode === "en") {
+    return "$" + converted.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (langCode === "ar") {
+    return converted.toLocaleString("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " د.إ";
+  }
+  if (langCode === "tr") {
+    return "₺" + converted.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (langCode === "ru") {
+    return converted.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
+  }
+  if (langCode === "zh") {
+    return "¥" + converted.toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  return converted.toLocaleString() + " " + langMeta.symbol;
+}
+
+function LanguageSelectorModal({ isOpen, onClose, currentLang, onSelectLanguage }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+        <div className="p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF6A00] flex items-center justify-center text-white shadow-lg">
+              <Globe className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-base">پشتیبانی از ۶ زبان بین‌المللی</h3>
+              <p className="text-xs text-slate-300 mt-0.5">زبان، جهت چیدمان (RTL/LTR) و ارز نمایش بازارگاه را انتخاب فرمائید.</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const isSelected = currentLang === lang.code;
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    onSelectLanguage(lang.code);
+                    onClose();
+                  }}
+                  className={`p-3.5 rounded-xl border text-right transition-all flex items-center justify-between group ${
+                    isSelected
+                      ? "border-[#FF6A00] bg-orange-50/70 shadow-md ring-2 ring-orange-400/20"
+                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{lang.flag}</span>
+                    <div>
+                      <div className="font-bold text-sm text-slate-800 group-hover:text-[#FF6A00] transition-colors flex items-center gap-1.5">
+                        <span>{lang.nativeName}</span>
+                        <span className="text-[10px] text-slate-500 font-normal">({lang.name})</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                        <span className="bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded font-mono uppercase text-[9px] font-bold">
+                          {lang.dir.toUpperCase()}
+                        </span>
+                        <span>•</span>
+                        <span className="font-semibold text-emerald-700">{lang.symbol} ({lang.currency})</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected ? (
+                    <CheckCircle className="w-5 h-5 text-[#FF6A00] shrink-0" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border border-slate-300 group-hover:border-slate-400 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p>
+              با تغییر زبان، <strong>چیدمان کامل رابط کاربری (RTL/LTR)</strong>، قیمت کالاها با لایو تبدیل نرخ ارزهای جهانی (IRT, USD, AED, TRY, RUB, CNY) و کلیه عنوان‌ها به‌صورت آنی به‌روزرسانی می‌شوند.
+            </p>
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-colors"
+          >
+            تأیید و بستن
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   // Navigation & View State
   const [activeTab, setActiveTab] = useState("home"); // home, catalog, product_detail, store_detail, account, seller_panel, admin_panel
