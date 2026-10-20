@@ -146,6 +146,19 @@ export function App() {
   const [priceSort, setPriceSort] = useState("newest");
   const [searchScopeCategory, setSearchScopeCategory] = useState("");
 
+  // Mobile App Download Modal & PWA Prompt State
+  const [showAppDownloadModal, setShowAppDownloadModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
   // Auth & User State
   const [authUser, setAuthUser] = useState(null);
   const [authStore, setAuthStore] = useState(null);
@@ -527,6 +540,15 @@ export function App() {
 
           <div className="flex items-center gap-5 text-slate-300">
             <button
+              onClick={() => setShowAppDownloadModal(true)}
+              className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1.5 transition-colors relative group"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>دانلود اپلیکیشن همراه (Android / iOS)</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping absolute -top-0.5 -right-1"></span>
+            </button>
+
+            <button
               onClick={() => setShowRfqModal(true)}
               className="text-[#FF6A00] hover:text-orange-400 font-bold flex items-center gap-1.5 transition-colors"
             >
@@ -611,6 +633,18 @@ export function App() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowAppDownloadModal(true)}
+                className="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-2 group shadow-sm"
+                title="دانلود اپلیکیشن همراه بازارگاه شاهکار"
+              >
+                <Smartphone className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:flex flex-col text-right leading-tight">
+                  <span className="text-[11px] font-black text-emerald-950">دانلود اپلیکیشن</span>
+                  <span className="text-[9px] text-emerald-700 font-extrabold">Android & iOS</span>
+                </div>
+              </button>
+
               <button
                 onClick={() => setShowAssistantModal(true)}
                 className="p-2.5 rounded-xl border border-orange-300 bg-orange-50 text-[#FF6A00] hover:bg-orange-100 transition-all flex items-center gap-2 group"
@@ -707,6 +741,14 @@ export function App() {
               >
                 <Zap className="w-3.5 h-3.5 text-amber-400" />
                 <span>کالاهای آمادۀ ارسال (Ready to Ship)</span>
+              </button>
+
+              <button
+                onClick={() => setShowAppDownloadModal(true)}
+                className="hover:bg-slate-800 text-emerald-400 font-extrabold px-3.5 py-2 rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                <span>نصب اپلیکیشن همراه</span>
               </button>
 
               <button
@@ -938,6 +980,66 @@ export function App() {
           </div>
         </div>
       )}
+
+      {/* MOBILE APP DOWNLOAD MODAL */}
+      {showAppDownloadModal && (
+        <AppDownloadModal
+          onClose={() => setShowAppDownloadModal(false)}
+          deferredPrompt={deferredPrompt}
+          showNotification={showNotification}
+        />
+      )}
+
+      {/* MOBILE BOTTOM NAVIGATION BAR */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-3 py-2 flex items-center justify-around text-[10px] font-extrabold shadow-2xl">
+        <button
+          onClick={() => { setActiveTab("home"); setSelectedCategory(""); }}
+          className={`flex flex-col items-center gap-1 ${activeTab === "home" ? "text-[#FF6A00]" : "text-slate-500"}`}
+        >
+          <Layers className="w-5 h-5" />
+          <span>خانه</span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("catalog"); }}
+          className={`flex flex-col items-center gap-1 ${activeTab === "catalog" ? "text-[#FF6A00]" : "text-slate-500"}`}
+        >
+          <Search className="w-5 h-5" />
+          <span>جستجو</span>
+        </button>
+
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="relative flex flex-col items-center gap-1 text-slate-500"
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span>سبد خرید</span>
+          {totalCartCount > 0 && (
+            <span className="absolute -top-1 right-2 bg-[#FF6A00] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black">
+              {toFaDigits(totalCartCount)}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setShowAppDownloadModal(true)}
+          className="flex flex-col items-center gap-1 text-emerald-600 font-black"
+        >
+          <Smartphone className="w-5 h-5 text-emerald-600 animate-pulse" />
+          <span>دانلود اپ</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (authUser) setActiveTab("account");
+            else setShowAuthModal(true);
+          }}
+          className={`flex flex-col items-center gap-1 ${activeTab === "account" ? "text-[#FF6A00]" : "text-slate-500"}`}
+        >
+          <User className="w-5 h-5" />
+          <span>حساب من</span>
+        </button>
+      </div>
 
       {/* AUTHENTICATION MODAL */}
       {showAuthModal && (
