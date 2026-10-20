@@ -3001,6 +3001,282 @@ function RfqModal({ onClose, showNotification }) {
   );
 }
 
+// MOBILE APP DOWNLOAD MODAL
+function AppDownloadModal({ onClose, deferredPrompt, showNotification }) {
+  const [appInfo, setAppInfo] = useState(null);
+  const [activeTab, setActiveTab] = useState("direct"); // direct, pwa, qr, stores
+  const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    fetch("./api/app/info")
+      .then((res) => res.json())
+      .then((data) => setAppInfo(data))
+      .catch((err) => console.error("Error loading app info:", err));
+  }, []);
+
+  const handleDirectDownload = () => {
+    setDownloading(true);
+    setProgress(15);
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setDownloading(false);
+          showNotification("دانلود مستقیم فایل APK برنامه بازارگاه با موفقیت آغاز شد.");
+          window.location.href = "./api/app/download-apk";
+          return 100;
+        }
+        return prev + 25;
+      });
+    }, 200);
+  };
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        showNotification("اپلیکیشن وب (PWA) بازارگاه با موفقیت روی دستگاه شما نصب گردید.");
+      }
+    } else {
+      showNotification("برای نصب مستقیم وب‌اپلیکیشن، در مرورگر موبایل دکمه Add to Home Screen را لمس کنید.", "info");
+    }
+  };
+
+  const copyAppUrl = () => {
+    const url = window.location.origin + "/api/app/download-apk";
+    navigator.clipboard.writeText(url);
+    showNotification("لینک دانلود مستقیم اپلیکیشن در حافظه کپی شد.");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-6 border border-slate-200 shadow-2xl text-xs relative my-8">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Smartphone className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-base text-slate-900">اپلیکیشن همراه بازارگاه شاهکار</h3>
+                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full">
+                  v{appInfo?.version || "2.4.0"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">تجربه خرید سریع، هوشمند و لذت‌بخش در اندروید و iOS</p>
+            </div>
+          </div>
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-center">
+          <div>
+            <div className="flex items-center justify-center gap-1 text-amber-500 font-black text-sm">
+              <Star className="w-4 h-4 fill-amber-400 stroke-amber-500" />
+              <span>{toFaDigits(appInfo?.rating || 4.9)}</span>
+            </div>
+            <p className="text-[10px] text-slate-500 font-bold mt-0.5">امتیاز کاربران</p>
+          </div>
+          <div className="border-x border-slate-200">
+            <div className="font-black text-slate-800 text-sm">{appInfo?.downloads_count || "۴۸,۵۰۰+"}</div>
+            <p className="text-[10px] text-slate-500 font-bold mt-0.5">نصب فعال</p>
+          </div>
+          <div>
+            <div className="font-black text-emerald-600 text-sm">{appInfo?.file_size || "۱۲.۸ مگابایت"}</div>
+            <p className="text-[10px] text-slate-500 font-bold mt-0.5">حجم فایل APK</p>
+          </div>
+        </div>
+
+        {/* Nav Tabs */}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl">
+          <button
+            onClick={() => setActiveTab("direct")}
+            className={`flex-1 py-2 rounded-xl font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "direct" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <DownloadCloud className="w-4 h-4" />
+            <span>دانلود APK</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("pwa")}
+            className={`flex-1 py-2 rounded-xl font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "pwa" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <AppWindow className="w-4 h-4" />
+            <span>نصب وب‌اپ PWA</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("qr")}
+            className={`flex-1 py-2 rounded-xl font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "qr" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>اسکن QR</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("stores")}
+            className={`flex-1 py-2 rounded-xl font-extrabold text-[11px] transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "stores" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            <span>مارکت‌ها</span>
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "direct" && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-3">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-extrabold text-xs text-emerald-900">دانلود مستقیم نسخه کامل اندروید (APK)</h4>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed mt-1">
+                    نسخه بومی ۲.۴.۰ با سرعت بالا، بهینه‌شده برای کلیه گوشی‌ها و تبلت‌های اندرویدی با پشتیبانی کامل از اعلانات لحظه‌ای سفارش.
+                  </p>
+                </div>
+              </div>
+
+              {downloading ? (
+                <div className="space-y-2 pt-2">
+                  <div className="flex justify-between text-[11px] font-bold text-emerald-900">
+                    <span>در حال دریافت فایل APK...</span>
+                    <span>{toFaDigits(progress)}٪</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-emerald-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-emerald-600 transition-all duration-300" 
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleDirectDownload}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 text-xs transition-all active:scale-[0.99]"
+                >
+                  <Download className="w-4 h-4 stroke-[2.5]" />
+                  <span>دانلود مستقیم APK (حجم: {appInfo?.file_size || "۱۲.۸ MB"})</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <span className="text-slate-600 font-bold">لینک دانلود مستقیم برای اشتراک‌گذاری:</span>
+              <button
+                onClick={copyAppUrl}
+                className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg font-extrabold flex items-center gap-1.5 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>کپی لینک</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "pwa" && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 space-y-3">
+              <div className="flex items-start gap-3">
+                <AppWindow className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-extrabold text-xs text-blue-900">نصب آنلاین وب‌اپلیکیشن (PWA)</h4>
+                  <p className="text-[11px] text-blue-800 leading-relaxed mt-1">
+                    بدون نیاز به دانلود فایل و بدون اشغال حافظه گوشی! سازگار با کلیه سیستم‌عامل‌های iOS (آیفون)، اندروید و دسکتاپ.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleInstallPwa}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 text-xs transition-all active:scale-[0.99]"
+              >
+                <Smartphone className="w-4 h-4 stroke-[2.5]" />
+                <span>افزودن به صفحه اصلی گوشی (Add to Home Screen)</span>
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-[11px] text-slate-600 font-semibold">
+              <div className="font-black text-slate-900">راهنمای کاربران آیفون (iOS Safari):</div>
+              <p>۱. در پایین مرورگر Safari روی آیکون Share (مربع با فلش رو به بالا) کلیک کنید.</p>
+              <p>۲. گزینه <span className="font-bold text-slate-900">Add to Home Screen</span> را انتخاب نمائید.</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "qr" && (
+          <div className="flex flex-col items-center justify-center space-y-4 py-2">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center shadow-inner">
+              <QRCodeSVG value={window.location.origin + "/api/app/download-apk"} size={170} />
+              <p className="text-[11px] font-bold text-slate-600 mt-3 text-center">
+                دوربین گوشی خود را جلوی کد QR قرار دهید تا لینک دانلود باز شود
+              </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "stores" && (
+          <div className="grid grid-cols-2 gap-3">
+            {(appInfo?.stores || [
+              { name: "کافه‌بازار", url: "https://cafebazaar.ir", badge: "دانلود از بازار", color: "bg-emerald-600" },
+              { name: "مایکت", url: "https://myket.ir", badge: "دانلود از مایکت", color: "bg-blue-600" },
+              { name: "سیب‌چه (iOS)", url: "https://sibche.com", badge: "دانلود از سیب‌چه", color: "bg-slate-800" },
+              { name: "اناردونی (iOS)", url: "https://anardoni.com", badge: "دانلود از اناردونی", color: "bg-rose-600" }
+            ]).map((s, idx) => (
+              <a
+                key={idx}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`p-3.5 rounded-2xl text-white font-extrabold flex items-center justify-between hover:opacity-95 transition-opacity shadow-md ${s.color}`}
+              >
+                <div className="space-y-0.5">
+                  <div className="text-[10px] opacity-80">دریافت مستقیم از</div>
+                  <div className="text-xs font-black">{s.name}</div>
+                </div>
+                <ExternalLink className="w-4 h-4 opacity-80" />
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Features Checklist */}
+        <div className="border-t border-slate-100 pt-4 space-y-2">
+          <h4 className="font-extrabold text-xs text-slate-900">قابلیت‌های برجسته اپلیکیشن همراه شاهکار:</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {(appInfo?.features || [
+              "جستجو و فیلتر هوشمند محصولات با هوش مصنوعی",
+              "ورود سریع و امن با رمز پویا و بیومتریک",
+              "مدیریت کامل غرفه و افزودن گروهی کالا با CSV",
+              "پیگیری لحظه‌ای مرسولات پستی و کد رهگیری"
+            ]).map((feat, idx) => (
+              <div key={idx} className="flex items-center gap-2 text-[11px] font-bold text-slate-700">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>{feat}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // AUTH MODAL
 function AuthModal({ mode, setMode, onClose, onLogin, apiFetch, showNotification, setAuthToken, setAuthUser, setAuthStore }) {
   const [email, setEmail] = useState("");
