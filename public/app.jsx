@@ -482,6 +482,21 @@ export function App() {
   const [showAppDownloadModal, setShowAppDownloadModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
+  // i18n & Multi-Currency State (6 Languages: FA, EN, AR, TR, RU, ZH)
+  const [currentLang, setCurrentLang] = useState("fa");
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+
+  const handleSelectLanguage = (langCode) => {
+    setCurrentLang(langCode);
+    const langMeta = SUPPORTED_LANGUAGES.find((l) => l.code === langCode) || SUPPORTED_LANGUAGES[0];
+    document.dir = langMeta.dir;
+    document.documentElement.lang = langCode;
+  };
+
+  const currentLangMeta = useMemo(() => {
+    return SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[0];
+  }, [currentLang]);
+
   useEffect(() => {
     const handler = (e) => {
       e.preventDefault();
@@ -860,10 +875,14 @@ export function App() {
       <div className="bg-[#1E2229] text-slate-300 text-xs py-1.5 px-4 font-medium border-b border-slate-800">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <Globe className="w-3.5 h-3.5 text-[#FF6A00]" />
-              <span>ایران - IRT (تومان) | فارسی</span>
-            </span>
+            <button
+              onClick={() => setShowLanguageModal(true)}
+              className="flex items-center gap-1.5 text-slate-200 hover:text-white transition-all bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700 font-extrabold cursor-pointer group shadow-sm"
+              title="تغییر زبان، جهت LTR/RTL و تبدیل ارز آنلاین"
+            >
+              <Globe className="w-3.5 h-3.5 text-[#FF6A00] group-hover:rotate-45 transition-transform duration-300" />
+              <span>{currentLangMeta.flag} {currentLangMeta.nativeName} ({currentLangMeta.symbol})</span>
+            </button>
             <span className="hidden md:flex items-center gap-1 text-slate-300">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>سیستم هوشمند مدیریت محصولات شاهکار</span>
@@ -965,6 +984,18 @@ export function App() {
 
             {/* Actions */}
             <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setShowLanguageModal(true)}
+                className="p-2.5 rounded-xl border border-slate-200 hover:border-[#FF6A00] hover:bg-orange-50 transition-all flex items-center gap-2 group shadow-sm"
+                title="انتخاب زبان و ارز نمایش (۶ زبان)"
+              >
+                <Globe className="w-5 h-5 text-[#FF6A00] group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:flex flex-col text-right leading-tight">
+                  <span className="text-[11px] font-black text-slate-800">{currentLangMeta.nativeName}</span>
+                  <span className="text-[9px] text-slate-500 font-extrabold">{currentLangMeta.flag} {currentLangMeta.symbol} ({currentLangMeta.currency})</span>
+                </div>
+              </button>
+
               <button
                 onClick={() => setShowAppDownloadModal(true)}
                 className="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition-all flex items-center gap-2 group shadow-sm"
@@ -1103,65 +1134,68 @@ export function App() {
 
       {/* DYNAMIC CONTENT ROUTER */}
       <main className="flex-1">
-        {activeTab === "home" && (
-          <HomePage
-            products={products}
-            categories={categories}
-            stores={stores}
-            onSelectCategory={(catId) => {
-              setSelectedCategory(catId);
-              setActiveTab("catalog");
-            }}
-            onSelectProduct={(id) => {
-              setSelectedProductId(id);
-              setActiveTab("product_detail");
-            }}
-            onSelectStore={(slug) => {
-              setSelectedStoreSlug(slug);
-              setActiveTab("store_detail");
-            }}
-            onAddToCart={addToCart}
-            onOpenRfq={() => setShowRfqModal(true)}
-          />
-        )}
+	        {activeTab === "home" && (
+	          <HomePage
+	            products={products}
+	            categories={categories}
+	            stores={stores}
+	            currentLang={currentLang}
+	            onSelectCategory={(catId) => {
+	              setSelectedCategory(catId);
+	              setActiveTab("catalog");
+	            }}
+	            onSelectProduct={(id) => {
+	              setSelectedProductId(id);
+	              setActiveTab("product_detail");
+	            }}
+	            onSelectStore={(slug) => {
+	              setSelectedStoreSlug(slug);
+	              setActiveTab("store_detail");
+	            }}
+	            onAddToCart={addToCart}
+	            onOpenRfq={() => setShowRfqModal(true)}
+	          />
+	        )}
 
-        {activeTab === "catalog" && (
-          <CatalogPage
-            products={filteredProducts}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            priceSort={priceSort}
-            onPriceSortChange={setPriceSort}
-            selectedBrandFilter={selectedBrandFilter}
-            onBrandFilterChange={setSelectedBrandFilter}
-            inStockFilter={inStockFilter}
-            onInStockFilterChange={setInStockFilter}
-            minPriceFilter={minPriceFilter}
-            onMinPriceChange={setMinPriceFilter}
-            maxPriceFilter={maxPriceFilter}
-            onMaxPriceChange={setMaxPriceFilter}
-            onSelectProduct={(id) => {
-              setSelectedProductId(id);
-              setActiveTab("product_detail");
-            }}
-            onAddToCart={addToCart}
-          />
-        )}
+	        {activeTab === "catalog" && (
+	          <CatalogPage
+	            products={filteredProducts}
+	            categories={categories}
+	            selectedCategory={selectedCategory}
+	            onSelectCategory={setSelectedCategory}
+	            searchQuery={searchQuery}
+	            onSearchChange={setSearchQuery}
+	            priceSort={priceSort}
+	            onPriceSortChange={setPriceSort}
+	            selectedBrandFilter={selectedBrandFilter}
+	            onBrandFilterChange={setSelectedBrandFilter}
+	            inStockFilter={inStockFilter}
+	            onInStockFilterChange={setInStockFilter}
+	            minPriceFilter={minPriceFilter}
+	            onMinPriceChange={setMinPriceFilter}
+	            maxPriceFilter={maxPriceFilter}
+	            onMaxPriceChange={setMaxPriceFilter}
+	            currentLang={currentLang}
+	            onSelectProduct={(id) => {
+	              setSelectedProductId(id);
+	              setActiveTab("product_detail");
+	            }}
+	            onAddToCart={addToCart}
+	          />
+	        )}
 
-        {activeTab === "product_detail" && (
-          <ProductDetailPage
-            productId={selectedProductId}
-            apiFetch={apiFetch}
-            authUser={authUser}
-            onAddToCart={addToCart}
-            onBack={() => setActiveTab("catalog")}
-            showNotification={showNotification}
-            onOpenRfq={() => setShowRfqModal(true)}
-          />
-        )}
+	        {activeTab === "product_detail" && (
+	          <ProductDetailPage
+	            productId={selectedProductId}
+	            apiFetch={apiFetch}
+	            authUser={authUser}
+	            currentLang={currentLang}
+	            onAddToCart={addToCart}
+	            onBack={() => setActiveTab("catalog")}
+	            showNotification={showNotification}
+	            onOpenRfq={() => setShowRfqModal(true)}
+	          />
+	        )}
 
         {activeTab === "store_detail" && (
           <StoreDetailPage
@@ -1313,6 +1347,33 @@ export function App() {
         </div>
       )}
 
+      {/* GLOBAL FOOTER */}
+      <Footer
+        currentLang={currentLang}
+        categories={categories}
+        onSelectCategory={(catId) => {
+          setSelectedCategory(catId);
+          setActiveTab("catalog");
+        }}
+        onOpenAppDownload={() => setShowAppDownloadModal(true)}
+        onOpenTests={() => {
+          setShowTestsModal(true);
+          runSystemTests();
+        }}
+        onOpenRfq={() => setShowRfqModal(true)}
+        onOpenLanguageModal={() => setShowLanguageModal(true)}
+      />
+
+      {/* LANGUAGE & CURRENCY SELECTOR MODAL */}
+      {showLanguageModal && (
+        <LanguageSelectorModal
+          isOpen={showLanguageModal}
+          onClose={() => setShowLanguageModal(false)}
+          currentLang={currentLang}
+          onSelectLanguage={handleSelectLanguage}
+        />
+      )}
+
       {/* MOBILE APP DOWNLOAD MODAL */}
       {showAppDownloadModal && (
         <AppDownloadModal
@@ -1391,8 +1452,178 @@ export function App() {
   );
 }
 
+// FOOTER COMPONENT
+function Footer({
+  currentLang = "fa",
+  categories = [],
+  onSelectCategory,
+  onOpenAppDownload,
+  onOpenTests,
+  onOpenRfq,
+  onOpenLanguageModal
+}) {
+  const langMeta = SUPPORTED_LANGUAGES.find((l) => l.code === currentLang) || SUPPORTED_LANGUAGES[0];
+
+  return (
+    <footer className="bg-slate-900 text-slate-300 mt-20 pt-12 pb-24 md:pb-12 border-t border-slate-800">
+      {/* 4 Feature Badges */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 border-b border-slate-800">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex items-center gap-3 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+            <div className="w-10 h-10 rounded-xl bg-[#FF6A00]/20 text-[#FF6A00] flex items-center justify-center font-black">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-white">ارسال سریع بین‌المللی</h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">تحویل اکسپرس به سراسر نقاط</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-white">تضمین اصالت و کیفیت</h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">تایید شده توسط AI Audit</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-white">۷ روز ضمانت بازگشت</h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">عودت سریع بدون قید و شرط</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/50">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black">
+              <Headphones className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-white">پشتیبانی ۲۴/۷ مشتریان</h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">پاسخگویی آنی دستیار هوشمند</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Footer Links & Information */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 pb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        {/* Brand & Mission */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF6A00] flex items-center justify-center text-white font-black shadow-lg shadow-orange-500/30">
+              <Store className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-lg font-black tracking-tight text-white">بازارگاه شاهکار</span>
+              <span className="block text-[10px] text-[#FF6A00] font-black">پلتفرم چندفروشنده‌ای بین‌المللی</span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
+            بازارگاه اینترنتی شاهکار، پلتفرم پیشرفته چندفروشنده‌ای با قابلیت خرید و فروش کالا و خدمات با گارانتی معتبر، تسویه حساب اتمیک و پشتیبانی هوشمند ۶ زبانه.
+          </p>
+
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              onClick={onOpenLanguageModal}
+              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition-all border border-slate-700"
+            >
+              <Globe className="w-4 h-4 text-[#FF6A00]" />
+              <span>زبان و ارز: {langMeta.flag} {langMeta.nativeName} ({langMeta.symbol})</span>
+            </button>
+
+            <button
+              onClick={onOpenAppDownload}
+              className="flex items-center gap-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+            >
+              <Smartphone className="w-4 h-4" />
+              <span>دانلود اپ APK</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Categories Links */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
+            دسته‌بندی‌های برتر
+          </h4>
+          <ul className="space-y-2.5 text-xs text-slate-400">
+            {categories.slice(0, 5).map((cat) => (
+              <li key={cat.id}>
+                <button
+                  onClick={() => onSelectCategory && onSelectCategory(cat.id)}
+                  className="hover:text-[#FF6A00] transition-colors flex items-center gap-1.5"
+                >
+                  <ChevronLeft className="w-3 h-3 text-slate-600" />
+                  <span>{cat.name_fa}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Quick Links */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
+            دسترسی سریع
+          </h4>
+          <ul className="space-y-2.5 text-xs text-slate-400">
+            <li>
+              <button onClick={onOpenRfq} className="hover:text-[#FF6A00] transition-colors flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-orange-400" />
+                <span>استعلام قیمت عمده (RFQ)</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={onOpenTests} className="hover:text-[#FF6A00] transition-colors flex items-center gap-1.5">
+                <Code className="w-3.5 h-3.5 text-emerald-400" />
+                <span>آزمون‌های سلامت سیستم (۲۱ تست)</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={onOpenAppDownload} className="hover:text-[#FF6A00] transition-colors flex items-center gap-1.5">
+                <DownloadCloud className="w-3.5 h-3.5 text-blue-400" />
+                <span>برنامه PWA و اپ بومی</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        {/* Trust Badges & Security */}
+        <div>
+          <h4 className="text-xs font-black text-white uppercase tracking-wider mb-4 border-b border-slate-800 pb-2">
+            تضمین امنیت و نمادها
+          </h4>
+          <div className="flex items-center gap-3">
+            <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700/60 text-center flex-1">
+              <Award className="w-6 h-6 text-amber-400 mx-auto mb-1" />
+              <span className="text-[10px] font-black text-slate-200 block">نماد اعتماد</span>
+              <span className="text-[9px] text-slate-400">۵ ستاره طلایی</span>
+            </div>
+            <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700/60 text-center flex-1">
+              <ShieldCheck className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+              <span className="text-[10px] font-black text-slate-200 block">ISO 27001</span>
+              <span className="text-[9px] text-slate-400">امنیت اطلاعات</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Copyright */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-500">
+        <p>© ۱۴۰۴ - تمامی حقوق مادی و معنوی برای پلتفرم بازارگاه اینترنتی بین‌المللی شاهکار محفوظ است.</p>
+      </div>
+    </footer>
+  );
+}
+
 // HOME PAGE
-function HomePage({ products, categories, stores, onSelectCategory, onSelectProduct, onSelectStore, onAddToCart, onOpenRfq }) {
+function HomePage({ products, categories, stores, currentLang = "fa", onSelectCategory, onSelectProduct, onSelectStore, onAddToCart, onOpenRfq }) {
   const featuredProducts = products.filter((p) => p.is_featured || p.discount_price);
 
   return (
@@ -1498,6 +1729,7 @@ function HomePage({ products, categories, stores, onSelectCategory, onSelectProd
             <ProductCard
               key={product.id}
               product={product}
+              currentLang={currentLang}
               onSelect={onSelectProduct}
               onAddToCart={onAddToCart}
             />
@@ -1509,7 +1741,7 @@ function HomePage({ products, categories, stores, onSelectCategory, onSelectProd
 }
 
 // PRODUCT CARD
-function ProductCard({ product, onSelect, onAddToCart }) {
+function ProductCard({ product, onSelect, onAddToCart, currentLang = "fa" }) {
   const imgs = product.images_json ? JSON.parse(product.images_json) : [];
   const mainImg = imgs[product.main_image_index || 0] || imgs[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800";
   const hasDiscount = product.discount_price && product.discount_price < product.price;
@@ -1544,11 +1776,11 @@ function ProductCard({ product, onSelect, onAddToCart }) {
           <div className="flex items-baseline justify-between">
             {hasDiscount ? (
               <div className="text-left">
-                <span className="text-[11px] text-slate-400 line-through block">{formatPrice(product.price)}</span>
-                <span className="text-sm font-black text-[#FF6A00]">{formatPrice(product.discount_price)} تومان</span>
+                <span className="text-[11px] text-slate-400 line-through block">{formatPriceWithLang(product.price, currentLang)}</span>
+                <span className="text-sm font-black text-[#FF6A00]">{formatPriceWithLang(product.discount_price, currentLang)}</span>
               </div>
             ) : (
-              <span className="text-sm font-black text-slate-900">{formatPrice(product.price)} تومان</span>
+              <span className="text-sm font-black text-slate-900">{formatPriceWithLang(product.price, currentLang)}</span>
             )}
           </div>
 
@@ -1586,6 +1818,7 @@ function CatalogPage({
   onMinPriceChange,
   maxPriceFilter,
   onMaxPriceChange,
+  currentLang = "fa",
   onSelectProduct,
   onAddToCart
 }) {
@@ -1682,6 +1915,7 @@ function CatalogPage({
                 <ProductCard
                   key={p.id}
                   product={p}
+                  currentLang={currentLang}
                   onSelect={onSelectProduct}
                   onAddToCart={onAddToCart}
                 />
@@ -1695,7 +1929,7 @@ function CatalogPage({
 }
 
 // PRODUCT DETAIL PAGE
-function ProductDetailPage({ productId, apiFetch, authUser, onAddToCart, onBack, showNotification, onOpenRfq }) {
+function ProductDetailPage({ productId, apiFetch, authUser, currentLang = "fa", onAddToCart, onBack, showNotification, onOpenRfq }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
