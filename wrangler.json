@@ -1,7 +1,7 @@
 {
   "name": "bazargah-marketplace",
   "main": "src/index.ts",
-  "compatibility_date": "2025-04-01",
+  "compatibility_date": "2024-09-23",
   "assets": {
     "directory": "./public",
     "html_handling": "auto-trailing-slash",
