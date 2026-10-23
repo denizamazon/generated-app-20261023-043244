@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="شاهکار" />
-  <link rel="manifest" href="./manifest.json" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081559.png" />
   <title>بازارگاه اینترنتی بین‌المللی | پلتفرم چندفروشنده‌ای شاهکار</title>
   
@@ -34,7 +34,7 @@
               200: '#ffd6bd',
               300: '#ffb58a',
               400: '#ff894d',
-              500: '#ff6600', // Alibaba Signature Orange
+              500: '#ff6600',
               600: '#e05500',
               700: '#b84000',
               800: '#943407',
@@ -85,7 +85,6 @@
       font-family: 'Vazirmatn', sans-serif;
       -webkit-font-smoothing: antialiased;
     }
-    /* Custom scrollbar for clean UI */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -109,7 +108,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').then(function(registration) {
+        navigator.serviceWorker.register('/sw.js').then(function(registration) {
           console.log('Shahkar PWA ServiceWorker registered with scope:', registration.scope);
         }, function(err) {
           console.log('Shahkar PWA ServiceWorker registration failed:', err);
@@ -119,6 +118,6 @@
   </script>
 
   <!-- React Main Script -->
-  <script type="text/babel" data-type="module" data-presets="react" src="./app.jsx"></script>
+  <script type="text/babel" data-type="module" data-presets="react" src="/app.jsx"></script>
 </body>
 </html>

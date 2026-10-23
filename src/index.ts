@@ -312,7 +312,8 @@ function initDatabaseState(): State {
       {
         id: 'ord_itm_1', order_id: 'ord_demo_1', store_id: 'str_1', product_id: 'prd_3',
         product_title: 'هدفون بی‌سیم سونی WH-1000XM5', price: 16900000, quantity: 1,
-        commission_amount: 845000, seller_payout: 16055000, item_status: 'DELIVERED'
+        commission_amount: 845000, seller_payout: 16055000, item_status: 'DELIVERED',
+        shipping_carrier: 'شرکت پست جمهوری اسلامی ایران', tracking_number: '123456789012345678901234'
       }
     ],
     seller_ledger: [
@@ -693,7 +694,7 @@ app.post("/api/auth/logout", (c) => {
   return c.json({ ok: true });
 });
 
-// Categories & Settings
+// Settings, Categories & Stores
 app.get("/api/settings", (c) => {
   const state = getDb();
   return c.json(state.marketplace_settings);
@@ -702,6 +703,11 @@ app.get("/api/settings", (c) => {
 app.get("/api/categories", (c) => {
   const state = getDb();
   return c.json(state.categories);
+});
+
+app.get("/api/stores", (c) => {
+  const state = getDb();
+  return c.json(state.stores);
 });
 
 // Products & Search
@@ -790,6 +796,58 @@ app.get("/api/products/:id", (c) => {
   });
 });
 
+// Product Reviews API
+app.get("/api/products/:id/reviews", (c) => {
+  const state = getDb();
+  const id = c.req.param("id");
+  const prd = state.products.find(p => p.id === id || p.slug === id);
+  const targetId = prd ? prd.id : id;
+  const reviews = state.reviews.filter(r => r.product_id === targetId && r.status === 'APPROVED');
+  return c.json(reviews);
+});
+
+app.post("/api/products/:id/reviews", async (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user) return c.json({ error: "لطفاً ابتدا وارد حساب شوید." }, 401);
+
+  const state = getDb();
+  const id = c.req.param("id");
+  const prd = state.products.find(p => p.id === id || p.slug === id);
+  const targetId = prd ? prd.id : id;
+  const { rating, comment } = await c.req.json();
+
+  if (!comment || comment.trim().length < 3) {
+    return c.json({ error: "متن دیدگاه باید حداقل ۳ کاراکتر باشد." }, 400);
+  }
+
+  const newReview = {
+    id: generateId("rev"),
+    product_id: targetId,
+    user_id: user.id,
+    user_name: user.full_name,
+    rating: Number(rating || 5),
+    comment: comment.trim(),
+    status: 'APPROVED',
+    created_at: Date.now()
+  };
+
+  state.reviews.unshift(newReview);
+  return c.json({ ok: true, review: newReview, message: "دیدگاه شما با موفقیت ثبت شد." });
+});
+
+// Product History API
+app.get("/api/products/:id/history", (c) => {
+  const state = getDb();
+  const id = c.req.param("id");
+  const prd = state.products.find(p => p.id === id || p.slug === id);
+  if (!prd) return c.json([]);
+
+  return c.json([
+    { id: 'hst_1', action: 'ایجاد کالا', details: `محصول ${prd.title} در انبار ثبت گردید.`, timestamp: prd.created_at },
+    { id: 'hst_2', action: 'بررسی کیفیت AI', details: 'کالا ارزیابی و تأیید انتشار شد.', timestamp: prd.created_at + 1000 }
+  ]);
+});
+
 // Interactive Shopping Assistant API
 app.post("/api/assistant/chat", async (c) => {
   const state = getDb();
@@ -837,6 +895,7 @@ app.get("/api/cart", (c) => {
     const product = state.products.find(p => p.id === ci.product_id);
     const store = product ? state.stores.find(s => s.id === product.store_id) : null;
     return {
+      id: ci.id,
       cart_item_id: ci.id,
       quantity: ci.quantity,
       product_id: ci.product_id,
@@ -960,7 +1019,14 @@ app.post("/api/checkout/validate", async (c) => {
   const shippingCost = subtotal >= 1000000 ? 0 : 45000;
   const totalAmount = Math.max(0, subtotal - discountAmount + shippingCost);
 
-  return c.json({ subtotal, discountAmount, shippingCost, totalAmount, itemCount: cart.length });
+  return c.json({
+    subtotal,
+    discount: discountAmount,
+    discountAmount,
+    shippingCost,
+    totalAmount,
+    itemCount: cart.length
+  });
 });
 
 app.post("/api/checkout/pay", async (c) => {
@@ -1012,8 +1078,22 @@ app.post("/api/checkout/pay", async (c) => {
       const commAmt = Math.round((effPrice * ci.quantity * commRate) / 100);
       const sellerPayout = (effPrice * ci.quantity) - commAmt;
 
+      // reduce product stock
+      prd.stock = Math.max(0, prd.stock - ci.quantity);
+
       state.order_items.push({
-        id: generateId("oitem"), order_id: orderId, store_id: prd.store_id, product_id: prd.id, product_title: prd.title, price: effPrice, quantity: ci.quantity, commission_amount: commAmt, seller_payout: sellerPayout, item_status: 'PAID'
+        id: generateId("oitem"),
+        order_id: orderId,
+        store_id: prd.store_id,
+        product_id: prd.id,
+        product_title: prd.title,
+        price: effPrice,
+        quantity: ci.quantity,
+        commission_amount: commAmt,
+        seller_payout: sellerPayout,
+        item_status: 'PAID',
+        shipping_carrier: 'شرکت پست جمهوری اسلامی ایران',
+        tracking_number: null
       });
 
       // Update Ledger & Balance
@@ -1031,17 +1111,61 @@ app.post("/api/checkout/pay", async (c) => {
   state.cart_items = state.cart_items.filter(ci => ci.user_id !== user.id);
 
   return c.json({
-    ok: true, orderId, orderNumber, pgTxnId, grandTotal, message: "پرداخت با موفقیت در درگاه شبیه‌ساز تأیید شد."
+    ok: true, orderId, orderNumber, pgTxnId, grandTotal, totalAmount: grandTotal, message: "پرداخت با موفقیت در درگاه شبیه‌ساز تأیید شد."
   });
 });
 
-// Orders List API
+// Customer Orders List API
 app.get("/api/orders", (c) => {
   const user = getAuthUserFromContext(c);
   if (!user) return c.json([]);
 
   const state = getDb();
-  return c.json(state.orders.filter(o => o.user_id === user.id));
+  const userOrders = state.orders.filter(o => o.user_id === user.id);
+  const enriched = userOrders.map(o => {
+    const items = state.order_items.filter(oi => oi.order_id === o.id).map(oi => {
+      const store = state.stores.find(s => s.id === oi.store_id);
+      return {
+        ...oi,
+        store_name: store?.store_name || "غرفه"
+      };
+    });
+    return {
+      ...o,
+      items
+    };
+  });
+  return c.json(enriched);
+});
+
+// Cancel Order API
+app.post("/api/orders/:orderId/cancel", async (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user) return c.json({ error: "احراز هویت نشدید." }, 401);
+
+  const state = getDb();
+  const orderId = c.req.param("orderId");
+
+  const order = state.orders.find(o => o.id === orderId && o.user_id === user.id);
+  if (!order) return c.json({ error: "سفارش پیدا نشد." }, 404);
+
+  if (order.status === "DELIVERED" || order.status === "CANCELLED") {
+    return c.json({ error: "امکان لغو این سفارش وجود ندارد." }, 400);
+  }
+
+  order.status = "CANCELLED";
+
+  // Restore inventory & adjust order items
+  const items = state.order_items.filter(oi => oi.order_id === order.id);
+  for (const item of items) {
+    item.item_status = "CANCELLED";
+    const prd = state.products.find(p => p.id === item.product_id);
+    if (prd) {
+      prd.stock += item.quantity;
+    }
+  }
+
+  return c.json({ ok: true, message: `سفارش شماره ${order.order_number} با موفقیت لغو شد و موجودی انبار به‌روز گردید.` });
 });
 
 // Seller Orders API
@@ -1064,6 +1188,33 @@ app.get("/api/seller/orders", (c) => {
   });
 
   return c.json(items);
+});
+
+// PUT /api/seller/orders/:itemId/ship
+app.put("/api/seller/orders/:itemId/ship", async (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user || user.role !== "SELLER") return c.json({ error: "دسترسی غیرمجاز" }, 403);
+
+  const state = getDb();
+  const store = state.stores.find(s => s.user_id === user.id);
+  if (!store) return c.json({ error: "غرفه یافت نشد." }, 400);
+
+  const itemId = c.req.param("itemId");
+  const { status, shipping_carrier, tracking_number } = await c.req.json();
+
+  const orderItem = state.order_items.find(oi => oi.id === itemId && oi.store_id === store.id);
+  if (!orderItem) return c.json({ error: "آیتم سفارش پیدا نشد." }, 404);
+
+  orderItem.item_status = status || "SHIPPED";
+  if (shipping_carrier) orderItem.shipping_carrier = shipping_carrier;
+  if (tracking_number) orderItem.tracking_number = tracking_number;
+
+  const parentOrder = state.orders.find(o => o.id === orderItem.order_id);
+  if (parentOrder) {
+    parentOrder.status = "SHIPPED";
+  }
+
+  return c.json({ ok: true, message: "اطلاعات ارسال پستی و کد رهگیری با موفقیت به‌روزرسانی شد." });
 });
 
 // Seller Ledger API
@@ -1122,6 +1273,143 @@ app.post("/api/seller/products", async (c) => {
   return c.json({ ok: true, id: prdId, message: "محصول با موفقیت در بازارگاه شاهکار ایجاد شد." });
 });
 
+// CSV Sample Endpoint
+app.get("/api/seller/products/sample-csv", (c) => {
+  const sample = `title,category_slug,price,discount_price,stock,brand,sku\n"گوشی آیفون 15","electronics",79000000,76500000,10,"اپل","IPH15-256"\n"هدفون بی‌سیم سونی","electronics",18500000,16900000,20,"سونی","SONY-XM5"\n"تی‌شرت مردانه آریا","fashion",650000,480000,50,"آریا","TSH-ARIA"`;
+  return new Response(sample, {
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": 'attachment; filename="shahkar-products-sample.csv"'
+    }
+  });
+});
+
+// Bulk CSV Preview
+app.post("/api/seller/products/bulk-preview", async (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user || user.role !== "SELLER") return c.json({ error: "دسترسی غیرمجاز" }, 403);
+
+  const state = getDb();
+  const { csv_text } = await c.req.json();
+  if (!csv_text || !csv_text.trim()) {
+    return c.json({ error: "محتوای CSV خالی است." }, 400);
+  }
+
+  const lines = csv_text.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length < 2) {
+    return c.json({ error: "فایل CSV حداقل باید شامل سطر سرآیند و یک سطر داده باشد." }, 400);
+  }
+
+  const header = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
+  const rows = [];
+  let validCount = 0;
+  let invalidCount = 0;
+
+  for (let i = 1; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const cols = rawLine.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || rawLine.split(",");
+    const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ""));
+
+    const rowObj: Record<string, string> = {};
+    header.forEach((h, idx) => {
+      rowObj[h] = cleanCols[idx] || "";
+    });
+
+    const errors: string[] = [];
+    const title = rowObj["title"] || rowObj["عنوان"] || "";
+    const price = parseFloat(rowObj["price"] || rowObj["قیمت"] || "0");
+    const stock = parseInt(rowObj["stock"] || rowObj["موجودی"] || "0");
+    const catSlug = rowObj["category_slug"] || rowObj["دسته‌بندی"] || "electronics";
+    const brand = rowObj["brand"] || rowObj["برند"] || "";
+    const sku = rowObj["sku"] || rowObj["شناسه"] || "";
+
+    if (!title || title.length < 3) errors.push("عنوان محصول الزامی و باید حداقل ۳ کاراکتر باشد.");
+    if (isNaN(price) || price <= 0) errors.push("قیمت نامعتبر است.");
+    if (isNaN(stock) || stock < 0) errors.push("موجودی نامعتبر است.");
+
+    const cat = state.categories.find(c => c.slug === catSlug || c.id === catSlug) || state.categories[0];
+
+    const isValid = errors.length === 0;
+    if (isValid) validCount++; else invalidCount++;
+
+    rows.push({
+      row_num: i,
+      valid: isValid,
+      errors,
+      product_data: {
+        title,
+        price,
+        discount_price: parseFloat(rowObj["discount_price"] || "0") || null,
+        stock,
+        category_id: cat.id,
+        category_name: cat.name_fa,
+        brand,
+        sku: sku || `SKU-BULK-${Date.now()}-${i}`
+      }
+    });
+  }
+
+  return c.json({
+    total_rows: lines.length - 1,
+    valid_rows_count: validCount,
+    invalid_rows_count: invalidCount,
+    rows
+  });
+});
+
+// Bulk CSV Import
+app.post("/api/seller/products/bulk-import", async (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user || user.role !== "SELLER") return c.json({ error: "دسترسی غیرمجاز" }, 403);
+
+  const state = getDb();
+  const store = state.stores.find(s => s.user_id === user.id);
+  if (!store) return c.json({ error: "غرفه یافت نشد." }, 400);
+
+  const { approved_rows } = await c.req.json();
+  if (!Array.isArray(approved_rows) || approved_rows.length === 0) {
+    return c.json({ error: "سطری برای ثبت ارسال نشده است." }, 400);
+  }
+
+  const now = Date.now();
+  let count = 0;
+
+  for (const item of approved_rows) {
+    const data = item.product_data;
+    if (data && data.title && data.price > 0) {
+      const prdId = generateId("prd");
+      state.products.unshift({
+        id: prdId,
+        store_id: store.id,
+        category_id: data.category_id || state.categories[0].id,
+        title: data.title,
+        slug: data.title.toLowerCase().replace(/\s+/g, "-") + "-" + Math.floor(Math.random() * 10000),
+        brand: data.brand || null,
+        sku: data.sku || null,
+        barcode: null,
+        price: Number(data.price),
+        discount_price: data.discount_price ? Number(data.discount_price) : null,
+        currency: 'IRT',
+        stock: Number(data.stock || 10),
+        short_description: `محصول ${data.title} ثبت‌شده از طریق CSV`,
+        description: `محصول ${data.title} با برند ${data.brand || "معتبر"} وارد سیستم انبار شاهکار شد.`,
+        specs_json: JSON.stringify([{ name: "شناسه کالا", value: data.sku || prdId }]),
+        images_json: JSON.stringify(["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800"]),
+        main_image_index: 0,
+        status: 'APPROVED',
+        is_featured: 0,
+        data_source: 'CSV_IMPORT',
+        version: 1,
+        created_at: now,
+        updated_at: now
+      });
+      count++;
+    }
+  }
+
+  return c.json({ ok: true, imported_count: count, message: `${count} کالا با موفقیت به انبار غرفه اضافه شد.` });
+});
+
 // Admin Stats
 app.get("/api/admin/stats", (c) => {
   const user = getAuthUserFromContext(c);
@@ -1173,6 +1461,45 @@ app.get("/api/admin/orders", (c) => {
     const customer = state.users.find(u => u.id === o.user_id);
     return { ...o, customer_name: customer?.full_name || "", customer_email: customer?.email || "" };
   }));
+});
+
+// Admin Pending Approval Products Queue
+app.get("/api/admin/products/pending", (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user || user.role !== "ADMIN") return c.json([]);
+
+  const state = getDb();
+  const pending = state.products.filter(p => p.status === 'PENDING_APPROVAL').map(p => {
+    const store = state.stores.find(s => s.id === p.store_id);
+    return { ...p, store_name: store?.store_name || "غرفه" };
+  });
+  return c.json(pending);
+});
+
+app.put("/api/admin/products/:id/approve", (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user || user.role !== "ADMIN") return c.json({ error: "دسترسی مدیر لازم است." }, 403);
+
+  const state = getDb();
+  const id = c.req.param("id");
+  const prd = state.products.find(p => p.id === id);
+  if (!prd) return c.json({ error: "محصول پیدا نشد." }, 404);
+
+  prd.status = 'APPROVED';
+  return c.json({ ok: true, message: "محصول تأیید و منتشر گردید." });
+});
+
+app.put("/api/admin/products/:id/reject", async (c) => {
+  const user = getAuthUserFromContext(c);
+  if (!user || user.role !== "ADMIN") return c.json({ error: "دسترسی مدیر لازم است." }, 403);
+
+  const state = getDb();
+  const id = c.req.param("id");
+  const prd = state.products.find(p => p.id === id);
+  if (!prd) return c.json({ error: "محصول پیدا نشد." }, 404);
+
+  prd.status = 'REJECTED';
+  return c.json({ ok: true, message: "محصول رد گردید." });
 });
 
 // Catch-all non-API fallback
