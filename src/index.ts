@@ -1503,6 +1503,8 @@ app.put("/api/admin/products/:id/reject", async (c) => {
 });
 
 // Catch-all non-API fallback
+app.get("/favicon.ico", (c) => new Response(null, { status: 204 }));
+
 app.get("*", async (c) => {
   if (c.env && (c.env as any).ASSETS) {
     return (c.env as any).ASSETS.fetch(c.req.raw);
@@ -1516,6 +1518,9 @@ app.get("*", async (c) => {
 export default {
   async fetch(request: Request, env: any, ctx: any): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === "/favicon.ico") {
+      return new Response(null, { status: 204 });
+    }
     if (url.pathname.startsWith("/api")) {
       return app.fetch(request, env, ctx);
     }
