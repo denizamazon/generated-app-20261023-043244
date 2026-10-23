@@ -1175,6 +1175,14 @@ app.get("/api/admin/orders", (c) => {
   }));
 });
 
+// Catch-all non-API fallback
+app.get("*", async (c) => {
+  if (c.env && (c.env as any).ASSETS) {
+    return (c.env as any).ASSETS.fetch(c.req.raw);
+  }
+  return c.text("Shahkar Marketplace Running", 200);
+});
+
 // ===================================
 // WORKER EXPORT
 // ===================================
@@ -1184,7 +1192,7 @@ export default {
     if (url.pathname.startsWith("/api")) {
       return app.fetch(request, env, ctx);
     }
-    if (env.ASSETS) {
+    if (env && env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
     return app.fetch(request, env, ctx);
